@@ -1,0 +1,45 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-primary-light);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  backdrop-filter: blur(10px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.toggle:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--color-primary);
+  color: var(--color-secondary);
+}
+
+.toggle > * {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
+/* Force the actual SVG icon to be much larger and strictly inherit color */
+.toggle svg {
+  width: 24px !important;
+  height: 24px !important;
+  display: block;
+  color: inherit !important;
+}
+
+.toggle svg * {
+  fill: currentColor;
+}

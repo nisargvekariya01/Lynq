@@ -1,0 +1,230 @@
+.card {
+  background: var(--bg-glass);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 20px 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: scaleIn 0.4s var(--ease-spring) forwards;
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad-brand);
+}
+
+.existingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15); /* Yellow/Amber background */
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24; /* Yellow text */
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.urlRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shortUrl {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-light);
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.shortUrl:hover { color: var(--color-secondary); text-decoration: underline; }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.copyBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: var(--grad-brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s var(--ease-spring), background 0.3s;
+  box-shadow: 0 3px 12px rgba(99,102,241,0.3);
+}
+
+.copyBtn:hover { opacity: 0.88; transform: translateY(-1px); }
+.copyBtn:active { transform: scale(0.97); }
+
+.copyBtn.copied {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 3px 12px rgba(16,185,129,0.35);
+  animation: bounce 0.4s var(--ease-spring);
+}
+
+.openBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.openBtn:hover {
+  color: var(--color-primary-light);
+  background: var(--bg-glass-hover);
+  transform: translateY(-1px);
+}
+
+.originalUrl {
+  margin-top: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.originalLabel {
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.originalText {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-4px); }
+}
+
+/* ── Broken Alert ─────────────────────────────── */
+.brokenAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #dc2626;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.brokenAlert svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Preview Row ──────────────────────────────── */
+.previewRow {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.previewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.previewLink:hover { color: var(--accent); }
+
+/* ── Inline Status ────────────────────────────── */
+.statusChecking {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.statusOk, .statusBad {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusOk { color: #16a34a; }
+.statusBad { color: #dc2626; }
+
+.statusDotGreen, .statusDotRed {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusDotGreen {
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+
+.statusDotRed { background: #ef4444; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (max-width: 600px) {
+  .card { padding: 16px; }
+  .shortUrl { font-size: 16px; }
+  .copyBtn { padding: 8px 14px; font-size: 13px; }
+}

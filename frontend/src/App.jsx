@@ -1,0 +1,36 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useTheme } from './hooks/useTheme.js';
+import { useToast } from './hooks/useToast.js';
+import Home from './pages/Home.jsx';
+import Unlock from './pages/Unlock.jsx';
+import Preview from './pages/Preview.jsx';
+import Toast from './components/Toast.jsx';
+import ConnectionStatus from './components/ConnectionStatus.jsx';
+
+export default function App() {
+  const { theme, toggleTheme } = useTheme();
+  const { toasts, addToast, removeToast } = useToast();
+
+  return (
+    <BrowserRouter>
+      <div className="app" data-theme={theme}>
+        <Routes>
+          <Route 
+            path="/" 
+            element={<Home theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
+          />
+          <Route 
+            path="/unlock/:shortCode" 
+            element={<Unlock theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
+          />
+          <Route 
+            path="/preview/:shortCode" 
+            element={<Preview theme={theme} onToggleTheme={toggleTheme} />} 
+          />
+        </Routes>
+        <ConnectionStatus />
+        <Toast toasts={toasts} onRemove={removeToast} />
+      </div>
+    </BrowserRouter>
+  );
+}
