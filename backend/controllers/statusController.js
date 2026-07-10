@@ -1,4 +1,4 @@
-import { checkUrlStatus } from '../services/statusService.js';
+import { checkUrlStatus } from "../services/statusService.js";
 
 /**
  * GET /api/status/:shortCode

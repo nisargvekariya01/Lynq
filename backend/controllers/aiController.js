@@ -1,5 +1,5 @@
-import { generateSuggestions } from '../services/aiService.js';
-import { isValidUrl } from '../utils/validator.js';
+import { generateSuggestions } from "../services/aiService.js";
+import { isValidUrl } from "../utils/validator.js";
 
 /**
  * POST /api/ai/suggest
@@ -10,11 +10,15 @@ export const handleSuggest = async (req, res, next) => {
     const { url } = req.body;
 
     if (!url) {
-      return res.status(400).json({ success: false, error: 'URL is required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "URL is required." });
     }
 
     if (!isValidUrl(url)) {
-      return res.status(400).json({ success: false, error: 'Invalid URL provided.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid URL provided." });
     }
 
     const suggestions = await generateSuggestions(url);

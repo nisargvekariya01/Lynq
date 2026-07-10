@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+const getDeviceId = () => {
+  let deviceId = localStorage.getItem('lynq_device_id');
+  if (!deviceId) {
+    deviceId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('lynq_device_id', deviceId);
+  }
+  return deviceId;
+};
+
 /**
  * Axios instance — routes through Vite proxy (/api → localhost:5000)
  * in development, and directly to BASE_URL in production.
@@ -18,7 +27,8 @@ const api = axios.create({
  * @returns {Promise<object>}
  */
 export const shortenUrl = async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null) => {
-  const { data } = await api.post('/shorten', { url, customAlias, password, expiresInDays, maxClicks, title, tags });
+  const deviceId = getDeviceId();
+  const { data } = await api.post('/shorten', { url, customAlias, password, expiresInDays, maxClicks, title, tags, deviceId });
   return data;
 };
 
@@ -105,7 +115,8 @@ export const checkStatus = async (shortCode) => {
  * @returns {Promise<object>}
  */
 export const bulkShortenUrls = async (rows) => {
-  const { data } = await api.post('/bulk-shorten', { rows });
+  const deviceId = getDeviceId();
+  const { data } = await api.post('/bulk-shorten', { rows, deviceId });
   return data; // { success, results }
 };
 

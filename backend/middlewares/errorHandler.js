@@ -1,4 +1,4 @@
-import env from '../config/env.js';
+import env from "../config/env.js";
 
 /**
  * Centralised error handling middleware.
@@ -8,12 +8,12 @@ import env from '../config/env.js';
 const errorHandler = (err, req, res, next) => {
   const status = err.status || 500;
   const message =
-    status === 500 && env.nodeEnv === 'production'
-      ? 'Something went wrong. Please try again.'
-      : err.message || 'Internal Server Error';
+    status === 500 && env.nodeEnv === "production"
+      ? "Something went wrong. Please try again."
+      : err.message || "Internal Server Error";
 
   if (status === 500) {
-    console.error('💥 Unhandled Error:', err);
+    console.error("💥 Unhandled Error:", err);
   }
 
   return res.status(status).json({

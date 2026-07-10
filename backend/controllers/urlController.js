@@ -1,6 +1,14 @@
-import env from '../config/env.js';
-import { shortenUrl, resolveUrl, getUrlInfo, verifyUrlPassword, editUrlDestination, deleteUrl, checkAliasAvailability } from '../services/urlService.js';
-import { checkSecurity } from '../services/securityService.js';
+import env from "../config/env.js";
+import {
+  shortenUrl,
+  resolveUrl,
+  getUrlInfo,
+  verifyUrlPassword,
+  editUrlDestination,
+  deleteUrl,
+  checkAliasAvailability,
+} from "../services/urlService.js";
+import { checkSecurity } from "../services/securityService.js";
 
 /**
  * POST /api/shorten
@@ -8,19 +16,41 @@ import { checkSecurity } from '../services/securityService.js';
  */
 export const handleShorten = async (req, res, next) => {
   try {
-    const { url, customAlias, password, expiresInDays, maxClicks, title, tags } = req.body;
+    const {
+      url,
+      customAlias,
+      password,
+      expiresInDays,
+      maxClicks,
+      title,
+      tags,
+      deviceId,
+    } = req.body;
 
     if (!url) {
-      return res.status(400).json({ success: false, error: 'URL is required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "URL is required." });
     }
 
     // Security Check
     const securityCheck = checkSecurity(url, customAlias, title);
     if (!securityCheck.isSafe) {
-      return res.status(403).json({ success: false, error: securityCheck.reason });
+      return res
+        .status(403)
+        .json({ success: false, error: securityCheck.reason });
     }
 
-    const result = await shortenUrl(url, customAlias || null, password || null, expiresInDays || null, maxClicks || null, title || null, tags || null);
+    const result = await shortenUrl(
+      url,
+      customAlias || null,
+      password || null,
+      expiresInDays || null,
+      maxClicks || null,
+      title || null,
+      tags || null,
+      deviceId || null,
+    );
 
     return res.status(result.isExisting ? 200 : 201).json({
       success: true,
@@ -49,7 +79,9 @@ export const handleEditUrl = async (req, res, next) => {
     const { newUrl, editToken } = req.body;
 
     if (!newUrl || !editToken) {
-      return res.status(400).json({ success: false, error: 'newUrl and editToken are required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "newUrl and editToken are required." });
     }
 
     const result = await editUrlDestination(shortCode, newUrl, editToken);
@@ -69,7 +101,9 @@ export const handleDeleteUrl = async (req, res, next) => {
     const { editToken } = req.body;
 
     if (!editToken) {
-      return res.status(400).json({ success: false, error: 'editToken is required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "editToken is required." });
     }
 
     const result = await deleteUrl(shortCode, editToken);
@@ -86,8 +120,8 @@ export const handleDeleteUrl = async (req, res, next) => {
 export const handleRedirect = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
-    const ip = req.ip || req.connection?.remoteAddress || '';
-    const userAgent = req.headers['user-agent'] || '';
+    const ip = req.ip || req.connection?.remoteAddress || "";
+    const userAgent = req.headers["user-agent"] || "";
     const result = await resolveUrl(shortCode, ip, userAgent);
 
     if (result.requiresPassword) {
@@ -111,12 +145,19 @@ export const handleVerifyPassword = async (req, res, next) => {
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ success: false, error: 'Password is required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Password is required." });
     }
 
-    const ip = req.ip || req.connection?.remoteAddress || '';
-    const userAgent = req.headers['user-agent'] || '';
-    const originalUrl = await verifyUrlPassword(shortCode, password, ip, userAgent);
+    const ip = req.ip || req.connection?.remoteAddress || "";
+    const userAgent = req.headers["user-agent"] || "";
+    const originalUrl = await verifyUrlPassword(
+      shortCode,
+      password,
+      ip,
+      userAgent,
+    );
     return res.status(200).json({ success: true, originalUrl });
   } catch (err) {
     next(err);
@@ -150,4 +191,3 @@ export const handleCheckAlias = async (req, res, next) => {
     next(err);
   }
 };
-

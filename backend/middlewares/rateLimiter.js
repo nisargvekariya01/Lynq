@@ -1,16 +1,16 @@
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import crypto from 'crypto';
-import client from '../config/redis.js';
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import crypto from "crypto";
+import client from "../config/redis.js";
 
 /**
  * Helper to generate a unique device hash using IP (IPv6-safe) and User-Agent.
  * Uses express-rate-limit's ipKeyGenerator to normalize IPv6 addresses.
  */
 const generateDeviceKey = (req) => {
-  const ip = ipKeyGenerator(req); // IPv6-safe helper from express-rate-limit
-  const userAgent = req.headers['user-agent'] || '';
-  return crypto.createHash('md5').update(`${ip}-${userAgent}`).digest('hex');
+  const ip = ipKeyGenerator(req.ip); // IPv6-safe helper from express-rate-limit
+  const userAgent = req.headers["user-agent"] || "";
+  return crypto.createHash("md5").update(`${ip}-${userAgent}`).digest("hex");
 };
 
 /**
@@ -29,7 +29,7 @@ const makeRedisStore = (prefix) =>
  * Returns { apiLimiter, shortenLimiter } ready to register as middleware.
  */
 export const createLimiters = () => {
-  const isLoadTest = process.env.LOAD_TEST_MODE === 'true';
+  const isLoadTest = process.env.LOAD_TEST_MODE === "true";
 
   /**
    * General API rate limiter: 60 requests per minute per device.
@@ -40,12 +40,12 @@ export const createLimiters = () => {
     max: isLoadTest ? 100_000 : 60,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req, res) => process.env.LOAD_TEST_MODE === 'true',
+    skip: (req, res) => process.env.LOAD_TEST_MODE === "true",
     keyGenerator: generateDeviceKey,
-    store: makeRedisStore('rl_api:'),
+    store: makeRedisStore("rl_api:"),
     message: {
       success: false,
-      error: 'Too many requests. Please slow down and try again in a minute.',
+      error: "Too many requests. Please slow down and try again in a minute.",
     },
   });
 
@@ -59,10 +59,11 @@ export const createLimiters = () => {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: generateDeviceKey,
-    store: makeRedisStore('rl_shorten:'),
+    store: makeRedisStore("rl_shorten:"),
     message: {
       success: false,
-      error: 'Too many shorten requests. Please wait a minute before trying again.',
+      error:
+        "Too many shorten requests. Please wait a minute before trying again.",
     },
   });
 
@@ -76,10 +77,10 @@ export const createLimiters = () => {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: generateDeviceKey,
-    store: makeRedisStore('rl_bulk:'),
+    store: makeRedisStore("rl_bulk:"),
     message: {
       success: false,
-      error: 'Bulk upload limit reached. You can upload a CSV once per hour.',
+      error: "Bulk upload limit reached. You can upload a CSV once per hour.",
     },
   });
 

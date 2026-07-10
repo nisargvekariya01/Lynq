@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import env from '../config/env.js';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import env from "../config/env.js";
 
 let genAI = null;
 if (env.geminiApiKey) {
@@ -11,12 +11,14 @@ if (env.geminiApiKey) {
  */
 const extractContext = async (targetUrl) => {
   try {
-    let title = '';
+    let title = "";
 
     // Special bypass for YouTube to avoid Cloud/Datacenter IP blocks
-    if (targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be')) {
-      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`);
-      if (oembedRes.ok) {
+    if (targetUrl.includes("youtube.com") || targetUrl.includes("youtu.be")) {
+      const oembedRes = await fetch( // Use oEmbed for YouTube to get title without scraping
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`,
+      );
+      if (oembedRes.ok) { // If oEmbed is successful, extract the title
         const data = await oembedRes.json();
         title = data.title;
       }
@@ -26,32 +28,48 @@ const extractContext = async (targetUrl) => {
     if (!title) {
       const res = await fetch(targetUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-        }
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        },
       });
       const html = await res.text();
-      
-      const ogMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
-      title = ogMatch ? ogMatch[1].trim() : '';
+
+      const ogMatch = html.match(
+        /<meta\s+property="og:title"\s+content="([^"]+)"/i,
+      );
+      title = ogMatch ? ogMatch[1].trim() : "";
 
       if (!title) {
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         title = titleMatch ? titleMatch[1].trim() : targetUrl;
       }
     }
-    
+
     // Clean up title (remove " - YouTube" etc)
-    title = title.replace(/ - YouTube$/i, '').trim();
+    title = title.replace(/ - YouTube$/i, "").trim();
 
     // Very naive tag extraction based on words in title
-    const tags = title.split(/\s+/).filter(w => w.length > 4).slice(0, 3).map(w => w.replace(/[^a-zA-Z0-9]/g, '').toLowerCase());
-    
+    const tags = title
+      .split(/\s+/)
+      .filter((w) => w.length > 4)
+      .slice(0, 3)
+      .map((w) => w.replace(/[^a-zA-Z0-9]/g, "").toLowerCase());
+
     // Generate a simple alias
-    const customAlias = title.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').substring(0, 15).toLowerCase();
+    const customAlias = title
+      .replace(/[^a-zA-Z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .substring(0, 15)
+      .toLowerCase();
 
     return { title, tags, customAlias, rawHtml: true };
   } catch (error) {
-    return { title: 'My Awesome Link', tags: ['link', 'cool'], customAlias: 'my-link-' + Math.floor(Math.random() * 1000) };
+    return {
+      title: "My Awesome Link",
+      tags: ["link", "cool"],
+      customAlias: "my-link-" + Math.floor(Math.random() * 1000),
+    };
   }
 };
 
@@ -64,11 +82,11 @@ export const generateSuggestions = async (targetUrl) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-      }
+      },
     });
 
     const prompt = `Analyze this URL and its actual webpage title.
@@ -83,11 +101,14 @@ export const generateSuggestions = async (targetUrl) => {
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
-    
+
     // Parse the JSON string
     return JSON.parse(responseText);
   } catch (error) {
-    console.error('Gemini API Error, falling back to local extractor:', error.message);
+    console.error(
+      "Gemini API Error, falling back to local extractor:",
+      error.message,
+    );
     return context;
   }
 };

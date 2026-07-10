@@ -1,5 +1,5 @@
-import client from '../config/redis.js';
-import pool from '../config/db.js';
+import client from "../config/redis.js";
+import pool from "../config/db.js";
 
 const CACHE_TTL = 300; // 5 minutes
 const CHECK_TIMEOUT_MS = 6000; // 6 second timeout for HEAD request
@@ -26,12 +26,12 @@ export const checkUrlStatus = async (shortCode) => {
 
   // 2. Look up the destination URL from the DB
   const { rows } = await pool.query(
-    'SELECT original_url FROM urls WHERE short_code = $1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)',
-    [shortCode]
+    "SELECT original_url FROM urls WHERE short_code = $1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)",
+    [shortCode],
   );
 
   if (rows.length === 0) {
-    const err = new Error('Short URL not found or has expired.');
+    const err = new Error("Short URL not found or has expired.");
     err.status = 404;
     throw err;
   }
@@ -48,11 +48,11 @@ export const checkUrlStatus = async (shortCode) => {
     const timeoutId = setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS);
 
     const response = await fetch(destinationUrl, {
-      method: 'HEAD',
+      method: "HEAD",
       signal: controller.signal,
-      redirect: 'follow',
+      redirect: "follow",
       headers: {
-        'User-Agent': 'Lynq-StatusChecker/1.0',
+        "User-Agent": "Lynq-StatusChecker/1.0",
       },
     });
 
@@ -62,13 +62,19 @@ export const checkUrlStatus = async (shortCode) => {
   } catch (err) {
     // Timeout, DNS failure, connection refused, etc.
     isAlive = false;
-    statusCode = err.name === 'AbortError' ? 408 : 0;
+    statusCode = err.name === "AbortError" ? 408 : 0;
   }
 
   const responseTime = Date.now() - startTime;
   const checkedAt = new Date().toISOString();
 
-  const result = { isAlive, statusCode, responseTime, checkedAt, destinationUrl };
+  const result = {
+    isAlive,
+    statusCode,
+    responseTime,
+    checkedAt,
+    destinationUrl,
+  };
 
   // 4. Cache result in Redis for 5 minutes
   try {

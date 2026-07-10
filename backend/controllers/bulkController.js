@@ -1,4 +1,4 @@
-import { bulkShortenUrls } from '../services/bulkService.js';
+import { bulkShortenUrls } from "../services/bulkService.js";
 
 /**
  * POST /api/bulk-shorten
@@ -7,17 +7,21 @@ import { bulkShortenUrls } from '../services/bulkService.js';
  */
 export const handleBulkShorten = async (req, res, next) => {
   try {
-    const { rows } = req.body;
+    const { rows, deviceId } = req.body;
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ success: false, error: 'rows array is required.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "rows array is required." });
     }
 
     if (rows.length > 100) {
-      return res.status(400).json({ success: false, error: 'Maximum 100 URLs per batch.' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Maximum 100 URLs per batch." });
     }
 
-    const results = await bulkShortenUrls(rows);
+    const results = await bulkShortenUrls(rows, deviceId);
     return res.status(200).json({ success: true, results });
   } catch (err) {
     next(err);

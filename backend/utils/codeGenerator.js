@@ -1,24 +1,21 @@
-import { customAlphabet } from 'nanoid';
-import env from '../config/env.js';
+import { customAlphabet } from "nanoid";
+import env from "../config/env.js";
 
 // URL-safe alphabet — avoids ambiguous chars like 0/O, 1/l/I
-const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-const generate = customAlphabet(alphabet, env.shortCodeLength);
-const generateLong = customAlphabet(alphabet, env.shortCodeLength + 2);
+const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
  * Generate a unique short code of configurable length.
+ * On collisions (retries), it exponentially decreases future collisions 
+ * by safely generating a longer CSPRNG string.
  * @param {number} attempt - 0-indexed retry count
  * @returns {string}
  */
 export const generateShortCode = (attempt = 0) => {
-  if (attempt === 0) return generate();
-  // Simple non-blocking entropy for retries
-  const entropy = Math.random().toString(36).substring(2, 6);
-  return (generateLong() + entropy).slice(0, env.shortCodeLength + 2);
+  // attempt 0 = length 6, attempt 1 = length 7, attempt 2 = length 8...
+  const generate = customAlphabet(alphabet, env.shortCodeLength + attempt);
+  return generate();
 };
-
 
 /**
  * Create a stable hash key for reverse-lookup deduplication.
