@@ -150,4 +150,14 @@ export const checkHealth = async () => {
   return data; // { status, db, redis, ts }
 };
 
+/**
+ * Resolve a short URL, trigger analytics, and get the destination (client-side redirect fallback).
+ * @param {string} shortCode 
+ * @returns {Promise<object>}
+ */
+export const resolveAndTrack = async (shortCode) => {
+  const { data } = await api.get(`/resolve/${shortCode}`);
+  return data; // { success, result: { requiresPassword, originalUrl } }
+};
+
 export default api;

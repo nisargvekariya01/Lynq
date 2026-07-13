@@ -136,6 +136,23 @@ export const handleRedirect = async (req, res, next) => {
 };
 
 /**
+ * GET /api/resolve/:shortCode
+ * Same logic as handleRedirect but returns JSON to avoid browser hard-redirects
+ */
+export const handleResolveAndTrack = async (req, res, next) => {
+  try {
+    const { shortCode } = req.params;
+    const ip = req.ip || req.connection?.remoteAddress || "";
+    const userAgent = req.headers["user-agent"] || "";
+    const result = await resolveUrl(shortCode, ip, userAgent);
+
+    return res.status(200).json({ success: true, result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * POST /api/verify/:shortCode
  * Verifies password and returns original URL.
  */
