@@ -1,29 +1,29 @@
 import { useNavigate } from 'react-router-dom';
-import styles from './Unlock.module.css';
+import styles from './NotFound.module.css';
 
 export default function NotFound() {
   const navigate = useNavigate();
 
   return (
     <div className={styles.container}>
-      <main className={styles.main}>
-        <div className={styles.card}>
-          <div className={styles.header}>
-            <div className={styles.iconWrapper} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
-            </div>
-            <h1>404</h1>
-            <p>Oops! The page or link you're looking for doesn't exist, has been deleted, or has expired.</p>
-          </div>
+      {/* Ambient background glowing orbs */}
+      <div className={styles.orb1}></div>
+      <div className={styles.orb2}></div>
 
-          <button className={styles.submitBtn} onClick={() => navigate('/')}>
-            Back to Home
-          </button>
-        </div>
+      <main className={styles.content}>
+        <h1 className={styles.errorCode}>404</h1>
+        <h2 className={styles.title}>Lost in the Void</h2>
+        <p className={styles.description}>
+          Oops! The link you clicked might be broken, expired, or never existed in the first place. Let's get you back to familiar territory.
+        </p>
+
+        <button className={styles.homeButton} onClick={() => navigate('/')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Back to Home
+        </button>
       </main>
     </div>
   );
