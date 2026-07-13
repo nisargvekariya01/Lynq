@@ -29,7 +29,7 @@ export default function RedirectHandler() {
       })
       .catch((err) => {
         if (err.response?.status === 404) {
-          setError('This link does not exist or has expired.');
+          navigate('/404', { replace: true });
         } else {
           setError(err.response?.data?.error || 'Failed to resolve link. The server might be down.');
         }

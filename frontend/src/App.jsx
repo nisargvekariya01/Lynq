@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx';
 import Unlock from './pages/Unlock.jsx';
 import Preview from './pages/Preview.jsx';
 import RedirectHandler from './pages/RedirectHandler.jsx';
+import NotFound from './pages/NotFound.jsx';
 import Toast from './components/Toast.jsx';
 import ConnectionStatus from './components/ConnectionStatus.jsx';
 
@@ -31,6 +32,10 @@ export default function App() {
           <Route 
             path="/:shortCode" 
             element={<RedirectHandler />} 
+          />
+          <Route 
+            path="*" 
+            element={<NotFound />} 
           />
         </Routes>
         <ConnectionStatus />
