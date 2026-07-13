@@ -4,6 +4,7 @@ import { useToast } from './hooks/useToast.js';
 import Home from './pages/Home.jsx';
 import Unlock from './pages/Unlock.jsx';
 import Preview from './pages/Preview.jsx';
+import RedirectHandler from './pages/RedirectHandler.jsx';
 import Toast from './components/Toast.jsx';
 import ConnectionStatus from './components/ConnectionStatus.jsx';
 
@@ -26,6 +27,10 @@ export default function App() {
           <Route 
             path="/preview/:shortCode" 
             element={<Preview theme={theme} onToggleTheme={toggleTheme} />} 
+          />
+          <Route 
+            path="/:shortCode" 
+            element={<RedirectHandler />} 
           />
         </Routes>
         <ConnectionStatus />

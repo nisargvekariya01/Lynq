@@ -1,10 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
 const getDeviceId = () => {
-  let deviceId = localStorage.getItem('lynq_device_id');
+  let deviceId = localStorage.getItem("lynq_device_id");
   if (!deviceId) {
-    deviceId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('lynq_device_id', deviceId);
+    deviceId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("lynq_device_id", deviceId);
   }
   return deviceId;
 };
@@ -15,9 +17,9 @@ const getDeviceId = () => {
  */
 const api = axios.create({
   // Use production URL if defined in Vercel env vars, otherwise default to Vite local proxy
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
 });
 
 /**
@@ -26,9 +28,26 @@ const api = axios.create({
  * @param {string|null} customAlias
  * @returns {Promise<object>}
  */
-export const shortenUrl = async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null) => {
+export const shortenUrl = async (
+  url,
+  customAlias = null,
+  password = null,
+  expiresInDays = null,
+  maxClicks = null,
+  title = null,
+  tags = null,
+) => {
   const deviceId = getDeviceId();
-  const { data } = await api.post('/shorten', { url, customAlias, password, expiresInDays, maxClicks, title, tags, deviceId });
+  const { data } = await api.post("/shorten", {
+    url,
+    customAlias,
+    password,
+    expiresInDays,
+    maxClicks,
+    title,
+    tags,
+    deviceId,
+  });
   return data;
 };
 
@@ -41,7 +60,6 @@ export const checkAlias = async (alias) => {
   const { data } = await api.get(`/check-alias/${encodeURIComponent(alias)}`);
   return data; // { success, available }
 };
-
 
 /**
  * Fetch analytics info for a short code.
@@ -72,7 +90,10 @@ export const verifyPassword = async (shortCode, password) => {
  * @returns {Promise<object>}
  */
 export const editUrl = async (shortCode, newUrl, editToken) => {
-  const { data } = await api.put(`/shorten/${shortCode}`, { newUrl, editToken });
+  const { data } = await api.put(`/shorten/${shortCode}`, {
+    newUrl,
+    editToken,
+  });
   return data;
 };
 
@@ -95,7 +116,7 @@ export const deleteUrl = async (shortCode, editToken) => {
  * @returns {Promise<object>}
  */
 export const suggestAi = async (url) => {
-  const { data } = await api.post('/ai/suggest', { url });
+  const { data } = await api.post("/ai/suggest", { url });
   return data.data; // { title, tags, customAlias }
 };
 
@@ -116,7 +137,7 @@ export const checkStatus = async (shortCode) => {
  */
 export const bulkShortenUrls = async (rows) => {
   const deviceId = getDeviceId();
-  const { data } = await api.post('/bulk-shorten', { rows, deviceId });
+  const { data } = await api.post("/bulk-shorten", { rows, deviceId });
   return data; // { success, results }
 };
 
@@ -125,7 +146,7 @@ export const bulkShortenUrls = async (rows) => {
  * @returns {Promise<object>}
  */
 export const checkHealth = async () => {
-  const { data } = await api.get('/health');
+  const { data } = await api.get("/health");
   return data; // { status, db, redis, ts }
 };
 

@@ -55,7 +55,7 @@ export const shortenUrl = async (
       );
 
       return {
-        shortUrl: `${env.baseUrl}/${existing.short_code}`,
+        shortUrl: `${env.frontendUrl}/${existing.short_code}`,
         shortCode: existing.short_code,
         isExisting: true,
         data: {
@@ -152,7 +152,7 @@ export const shortenUrl = async (
   }
 
   return {
-    shortUrl: `${env.baseUrl}/${shortCode}`,
+    shortUrl: `${env.frontendUrl}/${shortCode}`,
     shortCode,
     isExisting: false,
     editToken,
@@ -360,7 +360,7 @@ export const getUrlInfo = async (shortCode) => {
 
   return {
     shortCode,
-    shortUrl: `${env.baseUrl}/${shortCode}`,
+    shortUrl: `${env.frontendUrl}/${shortCode}`,
     originalUrl: data.original_url,
     clicks: data.clicks,
     uniqueVisitors,

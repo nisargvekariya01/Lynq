@@ -41,6 +41,7 @@ export const startAnalyticsWorker = () => {
 
         const urlClicksMap = {};
         const urlLastVisitMap = {};
+        const seenUniqueInBatch = new Set();
 
         clicks.forEach((click) => {
           const visitorString = `${click.ip}-${click.userAgent}`;
@@ -57,8 +58,12 @@ export const startAnalyticsWorker = () => {
             click.timestamp,
           );
 
-          uniqueQueryStr += `($${uniqueParamIdx++}, $${uniqueParamIdx++}),`;
-          uniqueValues.push(click.shortCode, visitorHash);
+          const uniqueKey = `${click.shortCode}:${visitorHash}`;
+          if (!seenUniqueInBatch.has(uniqueKey)) {
+            seenUniqueInBatch.add(uniqueKey);
+            uniqueQueryStr += `($${uniqueParamIdx++}, $${uniqueParamIdx++}),`;
+            uniqueValues.push(click.shortCode, visitorHash);
+          }
 
           if (!urlClicksMap[click.shortCode]) urlClicksMap[click.shortCode] = 0;
           urlClicksMap[click.shortCode]++;

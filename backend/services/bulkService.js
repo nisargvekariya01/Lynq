@@ -84,7 +84,7 @@ export const bulkShortenUrls = async (rows, deviceId = null) => {
           results.push({
             originalUrl,
             title: title || originalUrl,
-            shortUrl: `${env.baseUrl}/${shortCode}`,
+            shortUrl: `${env.frontendUrl}/${shortCode}`,
             shortCode,
             isExisting: true,
             error: null,
@@ -129,7 +129,7 @@ export const bulkShortenUrls = async (rows, deviceId = null) => {
       results.push({
         originalUrl,
         title: title || originalUrl,
-        shortUrl: `${env.baseUrl}/${shortCode}`,
+        shortUrl: `${env.frontendUrl}/${shortCode}`,
         shortCode,
         editToken,
         isExisting: false,

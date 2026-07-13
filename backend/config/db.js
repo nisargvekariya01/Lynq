@@ -89,6 +89,13 @@ export const initDb = async () => {
     } catch (e) {
       // Column likely already exists, ignore
     }
+    try {
+      await pool.query(
+        "ALTER TABLE unique_visitors ADD CONSTRAINT unique_visitor_hash UNIQUE (short_code, visitor_hash);"
+      );
+    } catch (e) {
+      // Constraint likely already exists, ignore
+    }
 
     console.log("✅ PostgreSQL Schema Verified");
   } catch (err) {
