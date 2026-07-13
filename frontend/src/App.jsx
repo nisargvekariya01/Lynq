@@ -30,6 +30,10 @@ export default function App() {
             element={<Preview theme={theme} onToggleTheme={toggleTheme} />} 
           />
           <Route 
+            path="/404" 
+            element={<NotFound />} 
+          />
+          <Route 
             path="/:shortCode" 
             element={<RedirectHandler />} 
           />
