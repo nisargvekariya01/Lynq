@@ -74,7 +74,7 @@ export const bulkShortenUrls = async (rows, deviceId = null) => {
       } else {
         // Check for existing duplicate (no alias, no password)
         const query = deviceId
-          ? "SELECT short_code FROM urls WHERE original_url = $1 AND password_hash IS NULL AND device_id = $2 LIMIT 1"
+          ? "SELECT short_code FROM urls WHERE original_url = $1 AND device_id = $2 LIMIT 1"
           : "SELECT short_code FROM urls WHERE original_url = $1 AND password_hash IS NULL AND device_id IS NULL LIMIT 1";
         const params = deviceId ? [originalUrl, deviceId] : [originalUrl];
 
