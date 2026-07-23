@@ -6,7 +6,7 @@ const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
  * Generate a unique short code of configurable length.
- * On collisions (retries), it exponentially decreases future collisions 
+ * On collisions (retries), it exponentially decreases future collisions
  * by safely generating a longer CSPRNG string.
  * @param {number} attempt - 0-indexed retry count
  * @returns {string}

@@ -21,7 +21,7 @@ export const isValidUrl = (url) => {
 
     // Block localhost and common internal IP ranges (SSRF - Server-Side Request Forgery protection)
     const isLocalhost =
-      hostname === "localhost" ||
+      hostname === "localhost" || 
       hostname === "127.0.0.1" ||
       hostname === "::1";
     const isInternalIp =

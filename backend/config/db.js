@@ -91,7 +91,7 @@ export const initDb = async () => {
     }
     try {
       await pool.query(
-        "ALTER TABLE unique_visitors ADD CONSTRAINT unique_visitor_hash UNIQUE (short_code, visitor_hash);"
+        "ALTER TABLE unique_visitors ADD CONSTRAINT unique_visitor_hash UNIQUE (short_code, visitor_hash);",
       );
     } catch (e) {
       // Constraint likely already exists, ignore

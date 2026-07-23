@@ -39,11 +39,11 @@ export const shortenUrl = async (
 
   // Duplicate check
   if (!customAlias && !password) {
-    const query = deviceId 
-      ? "SELECT * FROM urls WHERE original_url = $1 AND password_hash IS NULL AND device_id = $2 LIMIT 1"
+    const query = deviceId
+      ? "SELECT * FROM urls WHERE original_url = $1 AND device_id = $2 LIMIT 1"
       : "SELECT * FROM urls WHERE original_url = $1 AND password_hash IS NULL AND device_id IS NULL LIMIT 1";
     const params = deviceId ? [originalUrl, deviceId] : [originalUrl];
-    
+
     const { rows: existingRows } = await pool.query(query, params);
 
     if (existingRows.length > 0) {

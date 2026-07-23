@@ -15,10 +15,12 @@ const extractContext = async (targetUrl) => {
 
     // Special bypass for YouTube to avoid Cloud/Datacenter IP blocks
     if (targetUrl.includes("youtube.com") || targetUrl.includes("youtu.be")) {
-      const oembedRes = await fetch( // Use oEmbed for YouTube to get title without scraping
+      const oembedRes = await fetch(
+        // Use oEmbed for YouTube to get title without scraping
         `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`,
       );
-      if (oembedRes.ok) { // If oEmbed is successful, extract the title
+      if (oembedRes.ok) {
+        // If oEmbed is successful, extract the title
         const data = await oembedRes.json();
         title = data.title;
       }
