@@ -16,6 +16,7 @@ export const shortenUrl = async (
   tags = null,
   deviceId = null,
   userId = null,
+  routingRules = null,
 ) => {
   const originalUrl = normaliseUrl(rawUrl);
 
@@ -117,10 +118,48 @@ export const shortenUrl = async (
 
   const editToken = crypto.randomBytes(16).toString("hex");
 
+  // Clean and sanitize routing rules
+  const cleanedRules = {};
+  if (routingRules && typeof routingRules === "object") {
+    // 1. Device Targeting
+    if (routingRules.device && typeof routingRules.device === "object") {
+      cleanedRules.device = {};
+      if (routingRules.device.ios && isValidUrl(normaliseUrl(routingRules.device.ios))) {
+        cleanedRules.device.ios = normaliseUrl(routingRules.device.ios);
+      }
+      if (routingRules.device.android && isValidUrl(normaliseUrl(routingRules.device.android))) {
+        cleanedRules.device.android = normaliseUrl(routingRules.device.android);
+      }
+      if (routingRules.device.desktop && isValidUrl(normaliseUrl(routingRules.device.desktop))) {
+        cleanedRules.device.desktop = normaliseUrl(routingRules.device.desktop);
+      }
+    }
+
+    // 2. Expiration Fallback URL
+    const fallback = routingRules.fallbackUrl || routingRules.fallback_url;
+    if (fallback && isValidUrl(normaliseUrl(fallback))) {
+      cleanedRules.fallbackUrl = normaliseUrl(fallback);
+    }
+
+    // 3. A/B Split Testing
+    const splitArr = routingRules.splitTest || routingRules.split_test;
+    if (Array.isArray(splitArr) && splitArr.length > 0) {
+      const validVariants = splitArr
+        .filter((v) => v && typeof v.url === "string" && isValidUrl(normaliseUrl(v.url)))
+        .map((v) => ({
+          url: normaliseUrl(v.url),
+          weight: Math.max(1, parseInt(v.weight, 10) || 50),
+        }));
+      if (validVariants.length > 0) {
+        cleanedRules.splitTest = validVariants;
+      }
+    }
+  }
+
   const { rows: insertRows } = await pool.query(
     `
-    INSERT INTO urls (short_code, original_url, password_hash, max_clicks, expires_at, edit_token, title, tags, device_id, user_id)
-    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP + ($5 || ' days')::interval, $6, $7, $8, $9, $10)
+    INSERT INTO urls (short_code, original_url, password_hash, max_clicks, expires_at, edit_token, title, tags, device_id, user_id, routing_rules)
+    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP + ($5 || ' days')::interval, $6, $7, $8, $9, $10, $11)
     RETURNING *
   `,
     [
@@ -134,6 +173,7 @@ export const shortenUrl = async (
       tags,
       deviceId,
       userId || null,
+      JSON.stringify(cleanedRules),
     ],
   );
 
@@ -146,6 +186,7 @@ export const shortenUrl = async (
       password_hash: inserted.password_hash || "",
       max_clicks: inserted.max_clicks ? inserted.max_clicks.toString() : "",
       expires_at: inserted.expires_at ? inserted.expires_at.toISOString() : "",
+      routing_rules: JSON.stringify(inserted.routing_rules || cleanedRules),
       id: inserted.id.toString(),
     });
     await redisClient.expire(`url:${shortCode}`, 86400); // 24hr TTL
@@ -158,6 +199,7 @@ export const shortenUrl = async (
     shortCode,
     isExisting: false,
     editToken,
+    routingRules: inserted.routing_rules || cleanedRules,
     data: {
       title: inserted.title,
       tags: inserted.tags,
@@ -186,6 +228,16 @@ export const resolveUrl = async (
       else data.max_clicks = parseInt(data.max_clicks, 10);
       if (data.expires_at === "") data.expires_at = null;
       else data.expires_at = new Date(data.expires_at);
+
+      if (data.routing_rules) {
+        try {
+          data.routing_rules = typeof data.routing_rules === "string" ? JSON.parse(data.routing_rules) : data.routing_rules;
+        } catch {
+          data.routing_rules = {};
+        }
+      } else {
+        data.routing_rules = {};
+      }
     }
   } catch (err) {
     console.error("Redis cache get failed:", err.message);
@@ -204,6 +256,17 @@ export const resolveUrl = async (
     }
     data = rows[0];
 
+    // Parse routing_rules from Postgres row
+    if (data.routing_rules) {
+      try {
+        data.routing_rules = typeof data.routing_rules === "string" ? JSON.parse(data.routing_rules) : data.routing_rules;
+      } catch {
+        data.routing_rules = {};
+      }
+    } else {
+      data.routing_rules = {};
+    }
+
     // Re-cache for the next person
     try {
       await redisClient.hSet(`url:${shortCode}`, {
@@ -211,6 +274,7 @@ export const resolveUrl = async (
         password_hash: data.password_hash || "",
         max_clicks: data.max_clicks ? data.max_clicks.toString() : "",
         expires_at: data.expires_at ? data.expires_at.toISOString() : "",
+        routing_rules: JSON.stringify(data.routing_rules || {}),
         id: data.id.toString(),
       });
       await redisClient.expire(`url:${shortCode}`, 86400);
@@ -219,10 +283,34 @@ export const resolveUrl = async (
     }
   }
 
-  // 3. Expiry Check
-  if (data.expires_at && data.expires_at <= new Date()) {
-    await pool.query("DELETE FROM urls WHERE short_code = $1", [shortCode]);
-    await redisClient.del(`url:${shortCode}`);
+  const rules = data.routing_rules || {};
+  const fallbackUrl = rules.fallbackUrl || rules.fallback_url || null;
+
+  // 3. Expiry & Max Clicks Check with Smart Fallback
+  const isExpired = data.expires_at && data.expires_at <= new Date();
+  const isMaxClicks = data.max_clicks && data.clicks && data.clicks >= data.max_clicks;
+
+  if (isExpired || isMaxClicks) {
+    if (fallbackUrl) {
+      // Record analytics even for fallback routing
+      try {
+        const clickData = JSON.stringify({
+          shortCode,
+          ip,
+          userAgent,
+          referrer,
+          timestamp: new Date().toISOString(),
+          isFallback: true,
+        });
+        redisClient.rPush("analytics_queue", clickData).catch(() => {});
+      } catch {}
+      return { requiresPassword: false, originalUrl: fallbackUrl, isFallback: true };
+    }
+
+    if (isExpired) {
+      await pool.query("DELETE FROM urls WHERE short_code = $1", [shortCode]);
+      await redisClient.del(`url:${shortCode}`);
+    }
     const err = new Error("Short URL not found or has expired.");
     err.status = 404;
     throw err;
@@ -232,7 +320,37 @@ export const resolveUrl = async (
     return { requiresPassword: true, originalUrl: null };
   }
 
-  // 4. v2 Analytics Queue (Fire & Forget, zero DB connections on hot-path!)
+  // 4. Smart Dynamic Routing Evaluation
+  let resolvedDestination = data.original_url;
+
+  // 4a. Device-based routing
+  const ua = (userAgent || "").toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isAndroid = /android/.test(ua);
+  const isDesktop = !isIOS && !isAndroid && !/mobile|tablet/.test(ua);
+
+  if (isIOS && rules?.device?.ios) {
+    resolvedDestination = rules.device.ios;
+  } else if (isAndroid && rules?.device?.android) {
+    resolvedDestination = rules.device.android;
+  } else if (isDesktop && rules?.device?.desktop) {
+    resolvedDestination = rules.device.desktop;
+  } else if (Array.isArray(rules?.splitTest) && rules.splitTest.length > 0) {
+    // 4b. A/B Split Testing: fast pseudorandom weighted selection
+    const variants = rules.splitTest;
+    const totalWeight = variants.reduce((sum, v) => sum + (Number(v.weight) || 1), 0);
+    const rand = Math.random() * totalWeight;
+    let cumulative = 0;
+    for (const v of variants) {
+      cumulative += (Number(v.weight) || 1);
+      if (rand <= cumulative) {
+        resolvedDestination = v.url;
+        break;
+      }
+    }
+  }
+
+  // 5. v2 Analytics Queue (Fire & Forget, zero DB connections on hot-path!)
   try {
     const clickData = JSON.stringify({
       shortCode,
@@ -240,6 +358,7 @@ export const resolveUrl = async (
       userAgent,
       referrer,
       timestamp: new Date().toISOString(),
+      resolvedDestination,
     });
     // Push to the right side of the list (non-blocking)
     redisClient.rPush("analytics_queue", clickData).catch((err) => {
@@ -249,7 +368,7 @@ export const resolveUrl = async (
     console.error("Failed to queue analytics:", err.message);
   }
 
-  return { requiresPassword: false, originalUrl: data.original_url };
+  return { requiresPassword: false, originalUrl: resolvedDestination };
 };
 
 export const verifyUrlPassword = async (
@@ -459,10 +578,16 @@ export const getUrlInfo = async (shortCode) => {
     createdAt: data.created_at,
     lastVisited: data.last_visited,
     isProtected: !!data.password_hash,
+    routingRules: data.routing_rules || {},
   };
 };
 
-export const editUrlDestination = async (shortCode, newUrl, editToken) => {
+export const editUrlDestination = async (
+  shortCode,
+  newUrl,
+  editToken,
+  routingRules = null,
+) => {
   const originalUrl = normaliseUrl(newUrl);
 
   if (!isValidUrl(originalUrl)) {
@@ -490,10 +615,17 @@ export const editUrlDestination = async (shortCode, newUrl, editToken) => {
     throw err;
   }
 
-  await pool.query("UPDATE urls SET original_url = $1 WHERE id = $2", [
-    originalUrl,
-    data.id,
-  ]);
+  if (routingRules !== null && typeof routingRules === "object") {
+    await pool.query(
+      "UPDATE urls SET original_url = $1, routing_rules = $2 WHERE id = $3",
+      [originalUrl, JSON.stringify(routingRules), data.id],
+    );
+  } else {
+    await pool.query("UPDATE urls SET original_url = $1 WHERE id = $2", [
+      originalUrl,
+      data.id,
+    ]);
+  }
 
   // Invalidate Redis Cache
   try {

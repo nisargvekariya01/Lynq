@@ -40,6 +40,7 @@ export const initDb = async () => {
         edit_token VARCHAR(255),
         device_id VARCHAR(255),
         user_id VARCHAR(255),
+        routing_rules JSONB DEFAULT '{}'::jsonb,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         last_visited TIMESTAMP WITH TIME ZONE,
         expires_at TIMESTAMP WITH TIME ZONE
@@ -126,6 +127,15 @@ export const initDb = async () => {
       `);
     } catch (e) {
       // Column/index likely already exist, ignore
+    }
+
+    // ── Phase 5: Smart Redirect Engine Schema Upgrade ───────────────────────
+    try {
+      await pool.query(`
+        ALTER TABLE urls ADD COLUMN IF NOT EXISTS routing_rules JSONB DEFAULT '{}'::jsonb;
+      `);
+    } catch (e) {
+      // Column likely already exists, ignore
     }
 
     // ── Phase 1: Composite Performance Indexes ────────────────────────────────

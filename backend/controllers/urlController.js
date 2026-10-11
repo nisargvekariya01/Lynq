@@ -26,6 +26,7 @@ export const handleShorten = async (req, res, next) => {
       title,
       tags,
       deviceId,
+      routingRules,
     } = req.body;
 
     if (!url) {
@@ -52,6 +53,7 @@ export const handleShorten = async (req, res, next) => {
       tags || null,
       deviceId || null,
       req.userId || null,
+      routingRules || null,
     );
 
     return res.status(result.isExisting ? 200 : 201).json({
@@ -65,6 +67,7 @@ export const handleShorten = async (req, res, next) => {
       originalUrl: result.data.originalUrl,
       createdAt: result.data.createdAt,
       clicks: parseInt(result.data.clicks, 10) || 0,
+      routingRules: result.routingRules || result.data.routing_rules || {},
     });
   } catch (err) {
     next(err);
@@ -73,12 +76,12 @@ export const handleShorten = async (req, res, next) => {
 
 /**
  * PUT /api/shorten/:shortCode
- * Body: { newUrl: string, editToken: string }
+ * Body: { newUrl: string, editToken: string, routingRules?: object }
  */
 export const handleEditUrl = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
-    const { newUrl, editToken } = req.body;
+    const { newUrl, editToken, routingRules } = req.body;
 
     if (!newUrl || !editToken) {
       return res
@@ -86,7 +89,12 @@ export const handleEditUrl = async (req, res, next) => {
         .json({ success: false, error: "newUrl and editToken are required." });
     }
 
-    const result = await editUrlDestination(shortCode, newUrl, editToken);
+    const result = await editUrlDestination(
+      shortCode,
+      newUrl,
+      editToken,
+      routingRules || null,
+    );
     return res.status(200).json(result);
   } catch (err) {
     next(err);

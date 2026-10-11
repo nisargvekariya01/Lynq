@@ -24,12 +24,12 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
 
-  const handleShorten = useCallback(async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null) => {
+  const handleShorten = useCallback(async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null, routingRules = null) => {
     setIsLoading(true);
     setResult(null);
 
     try {
-      const data = await apiShorten(url, customAlias, password, expiresInDays, maxClicks, title, tags);
+      const data = await apiShorten(url, customAlias, password, expiresInDays, maxClicks, title, tags, routingRules);
       setResult(data);
 
       // Persist to recent URLs (deduplicate by shortCode)

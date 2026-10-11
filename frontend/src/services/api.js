@@ -60,6 +60,7 @@ export const shortenUrl = async (
   maxClicks = null,
   title = null,
   tags = null,
+  routingRules = null,
 ) => {
   const deviceId = getDeviceId();
   const { data } = await api.post("/shorten", {
@@ -71,6 +72,7 @@ export const shortenUrl = async (
     title,
     tags,
     deviceId,
+    routingRules,
   });
   return data;
 };
@@ -111,12 +113,14 @@ export const verifyPassword = async (shortCode, password) => {
  * @param {string} shortCode
  * @param {string} newUrl
  * @param {string} editToken
+ * @param {object|null} routingRules
  * @returns {Promise<object>}
  */
-export const editUrl = async (shortCode, newUrl, editToken) => {
+export const editUrl = async (shortCode, newUrl, editToken, routingRules = null) => {
   const { data } = await api.put(`/shorten/${shortCode}`, {
     newUrl,
     editToken,
+    routingRules,
   });
   return data;
 };
