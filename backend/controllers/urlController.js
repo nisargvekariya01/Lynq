@@ -36,7 +36,7 @@ export const handleShorten = async (req, res, next) => {
     }
 
     // Security Check
-    const securityCheck = checkSecurity(url, customAlias, title);
+    const securityCheck = await checkSecurity(url, customAlias, title);
     if (!securityCheck.isSafe) {
       return res
         .status(403)

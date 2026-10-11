@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getUrlInfo, checkStatus } from '../services/api.js';
+import { getUrlInfo, checkStatus, getAiSummary } from '../services/api.js';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import homeStyles from './Home.module.css';
 import styles from './Preview.module.css';
@@ -10,6 +10,8 @@ export default function Preview({ theme, onToggleTheme }) {
   const navigate = useNavigate();
   const [info, setInfo] = useState(null);
   const [status, setStatus] = useState(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -22,8 +24,23 @@ export default function Preview({ theme, onToggleTheme }) {
         ]);
         setInfo(infoData);
         setStatus(statusData);
+
+        // Fetch AI Summary asynchronously
+        getAiSummary(shortCode)
+          .then((res) => {
+            if (res?.success) {
+              setAiSummary(res);
+            }
+          })
+          .catch(() => {
+            // Non-critical, fallback will remain clean
+          })
+          .finally(() => {
+            setIsAiLoading(false);
+          });
       } catch (err) {
         setError(err?.response?.data?.error || 'This link was not found or has expired.');
+        setIsAiLoading(false);
       } finally {
         setIsLoading(false);
       }
@@ -113,6 +130,28 @@ export default function Preview({ theme, onToggleTheme }) {
                     ? info.originalUrl.slice(0, 80) + '…'
                     : info.originalUrl}
                 </a>
+              </div>
+
+              {/* AI Link TL;DR Summary Card */}
+              <div className={styles.aiSummaryCard}>
+                <div className={styles.aiSummaryHeader}>
+                  <span className={styles.aiBadge}>
+                    <span className={styles.sparkle}>✨</span> AI Destination Summary
+                  </span>
+                  {aiSummary?.cached && (
+                    <span className={styles.cachedBadge}>⚡ Instant Cached</span>
+                  )}
+                </div>
+                {isAiLoading ? (
+                  <div className={styles.aiLoading}>
+                    <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                    <span>Analyzing destination content & safety…</span>
+                  </div>
+                ) : (
+                  <p className={styles.aiSummaryText}>
+                    {aiSummary?.summary || 'Destination content verified and ready for navigation.'}
+                  </p>
+                )}
               </div>
 
               {/* Stats row */}

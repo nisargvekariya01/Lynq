@@ -1,5 +1,11 @@
-import { generateSuggestions } from "../services/aiService.js";
+import {
+  generateSuggestions,
+  generateSummary,
+  suggestAvailableAliases,
+} from "../services/aiService.js";
 import { isValidUrl } from "../utils/validator.js";
+import pool from "../config/db.js";
+import redisClient from "../config/redis.js";
 
 /**
  * POST /api/ai/suggest
@@ -26,6 +32,87 @@ export const handleSuggest = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: suggestions,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/ai/summary/:shortCode
+ * Returns a 2-sentence AI summary of the destination URL with Redis caching.
+ */
+export const handleGetSummary = async (req, res, next) => {
+  try {
+    const { shortCode } = req.params;
+
+    if (!shortCode) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Short code is required." });
+    }
+
+    // Lookup destination URL in Redis first, then PostgreSQL
+    let originalUrl = null;
+    try {
+      const cached = await redisClient.hGetAll(`url:${shortCode}`);
+      if (cached && cached.originalUrl) {
+        originalUrl = cached.originalUrl;
+      }
+    } catch {}
+
+    if (!originalUrl) {
+      const { rows } = await pool.query(
+        "SELECT original_url FROM urls WHERE short_code = $1",
+        [shortCode],
+      );
+
+      if (rows.length === 0) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Link not found." });
+      }
+      originalUrl = rows[0].original_url;
+    }
+
+    const { summary, cached } = await generateSummary(originalUrl, shortCode);
+
+    return res.status(200).json({
+      success: true,
+      shortCode,
+      originalUrl,
+      summary,
+      cached,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/ai/suggest-aliases
+ * Body: { targetUrl: string, desiredAlias: string }
+ * Returns available AI alternative aliases when an alias is already taken.
+ */
+export const handleSuggestAliases = async (req, res, next) => {
+  try {
+    const { targetUrl, desiredAlias } = req.body;
+
+    if (!desiredAlias) {
+      return res
+        .status(400)
+        .json({ success: false, error: "desiredAlias is required." });
+    }
+
+    const suggestions = await suggestAvailableAliases(
+      targetUrl || "",
+      desiredAlias,
+    );
+
+    return res.status(200).json({
+      success: true,
+      desiredAlias,
+      suggestions,
     });
   } catch (err) {
     next(err);

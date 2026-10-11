@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { suggestAi, checkAlias } from '../services/api.js';
+import { suggestAi, checkAlias, suggestAliasAlternatives } from '../services/api.js';
 import styles from './UrlInput.module.css';
 
 /**
@@ -26,6 +26,8 @@ export default function UrlInput({ onShorten, isLoading }) {
   const [errors, setErrors] = useState({}); // Stores validation errors per field
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aliasStatus, setAliasStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid'
+  const [aliasSuggestions, setAliasSuggestions] = useState([]);
+  const [isSuggestingAliases, setIsSuggestingAliases] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -161,6 +163,7 @@ export default function UrlInput({ onShorten, isLoading }) {
   const handleAliasChange = (e) => {
     setAlias(e.target.value.replace(/[^a-zA-Z0-9-]/g, ''));
     setAliasStatus(null); // reset status when alias changes
+    setAliasSuggestions([]);
   };
 
   const handleCheckAlias = async () => {
@@ -176,6 +179,20 @@ export default function UrlInput({ onShorten, isLoading }) {
       setAliasStatus(res.available ? 'available' : 'taken');
     } catch {
       setAliasStatus(null);
+    }
+  };
+
+  const handleSuggestAlternatives = async () => {
+    const trimmed = alias.trim();
+    if (!trimmed) return;
+    setIsSuggestingAliases(true);
+    try {
+      const suggestions = await suggestAliasAlternatives(url.trim(), trimmed);
+      setAliasSuggestions(suggestions || []);
+    } catch (err) {
+      console.error('Failed to suggest alias alternatives:', err);
+    } finally {
+      setIsSuggestingAliases(false);
     }
   };
 
@@ -364,7 +381,48 @@ export default function UrlInput({ onShorten, isLoading }) {
             <p className={styles.aliasAvailable}>✅ Available — this alias is free to use!</p>
           )}
           {aliasStatus === 'taken' && (
-            <p className={styles.aliasTaken}>❌ Already taken — try a different alias.</p>
+            <div className={styles.takenContainer}>
+              <div className={styles.takenHeader}>
+                <p className={styles.aliasTaken}>❌ Already taken — try a different alias.</p>
+                <button
+                  type="button"
+                  className={styles.suggestAltBtn}
+                  onClick={handleSuggestAlternatives}
+                  disabled={isSuggestingAliases || isLoading}
+                >
+                  {isSuggestingAliases ? (
+                    <>
+                      <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                      <span>Thinking…</span>
+                    </>
+                  ) : (
+                    '✨ Suggest available alternatives'
+                  )}
+                </button>
+              </div>
+
+              {aliasSuggestions.length > 0 && (
+                <div className={styles.suggestionsBox}>
+                  <span className={styles.suggestionsTitle}>Available Alternatives (1-click to select):</span>
+                  <div className={styles.suggestionPills}>
+                    {aliasSuggestions.map((alt) => (
+                      <button
+                        key={alt}
+                        type="button"
+                        className={styles.suggestionPill}
+                        onClick={() => {
+                          setAlias(alt);
+                          setAliasStatus('available');
+                          setAliasSuggestions([]);
+                        }}
+                      >
+                        {alt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           {aliasStatus === 'invalid' && (
             <p className={styles.aliasTaken}>⚠ Must be 3–30 characters, letters, numbers or hyphens only.</p>

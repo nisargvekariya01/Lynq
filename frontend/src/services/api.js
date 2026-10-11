@@ -149,6 +149,30 @@ export const suggestAi = async (url) => {
 };
 
 /**
+ * Get AI 2-sentence TL;DR summary for a short URL preview.
+ * @param {string} shortCode
+ * @returns {Promise<object>}
+ */
+export const getAiSummary = async (shortCode) => {
+  const { data } = await api.get(`/ai/summary/${encodeURIComponent(shortCode)}`);
+  return data; // { success, summary, cached }
+};
+
+/**
+ * Get smart AI-suggested alternative aliases when custom alias is taken.
+ * @param {string} targetUrl
+ * @param {string} desiredAlias
+ * @returns {Promise<string[]>}
+ */
+export const suggestAliasAlternatives = async (targetUrl, desiredAlias) => {
+  const { data } = await api.post("/ai/suggest-aliases", {
+    targetUrl,
+    desiredAlias,
+  });
+  return data.suggestions || [];
+};
+
+/**
  * Check live status of a short URL's destination.
  * @param {string} shortCode
  * @returns {Promise<object>}
