@@ -246,25 +246,29 @@ input[type="number"] {
   display: inline-block;
 }
 
-/* ── Hide Clerk Watermark, Logo & Development Banner ─────── */
-.cl-footer > div:not(.cl-footerAction),
-.cl-footerAction + div,
-.cl-footerAction + span,
-.cl-footerAction + p,
-.cl-footer [class*="badge"],
-.cl-footer [class*="securedBy"],
-.cl-footer [class*="developmentMode"],
-.cl-footer a[href*="clerk.com"],
-.cl-footer svg[data-icon="clerk"],
-.cl-footer [data-localization-key="footer.securedBy"],
-.cl-internal-b3fm6y,
-.cl-internal-1dauvpw,
-.cl-internal-phfxk4,
-.cl-footerPages,
-[class*="cl-footer"] > [class*="internal"]:not(:has(a[href*="sign-up"])):not(:has(a[href*="sign-in"])) {
+/* ── Hide Clerk Watermark, Logo & Empty Footer ───────────── */
+.cl-footer {
   display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
-.cl-footer > *:not(.cl-footerAction):not(:has(.cl-footerActionLink)) {
-  display: none !important;
+.cl-modalContent {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
 }
+
+.cl-card,
+.cl-signIn-root,
+.cl-signUp-root {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+}
+

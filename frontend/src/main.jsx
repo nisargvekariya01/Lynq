@@ -31,9 +31,7 @@ function Root() {
       },
       elements: {
         footer: {
-          '& > div:not([class*="footerAction"])': {
-            display: 'none !important',
-          },
+          display: 'none !important',
         },
         footerPages: {
           display: 'none !important',
@@ -42,9 +40,15 @@ function Root() {
           border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: isDark ? '0 24px 56px rgba(0, 0, 0, 0.65)' : '0 16px 36px rgba(0, 0, 0, 0.12)',
           backdropFilter: 'blur(24px)',
+          borderRadius: '1.25rem',
+          overflow: 'hidden',
         },
         modalContent: {
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
+          border: 'none',
+          background: 'transparent',
+          boxShadow: 'none',
+          borderRadius: '1.25rem',
+          overflow: 'hidden',
         },
         userButtonPopoverCard: {
           border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',

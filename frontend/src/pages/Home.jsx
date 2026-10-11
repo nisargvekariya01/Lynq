@@ -14,7 +14,7 @@ import RecentUrls from '../components/RecentUrls.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import BulkUpload from '../components/BulkUpload.jsx';
 import UserPortfolio from '../components/UserPortfolio.jsx';
-import LandingSections from '../components/LandingSections.jsx';
+import LandingSections, { LandingFooter } from '../components/LandingSections.jsx';
 
 import styles from './Home.module.css';
 
@@ -399,30 +399,10 @@ export default function Home({ theme, onToggleTheme, addToast }) {
             </div>
           </div>
         ) : (
-          /* ── Logged In Workspace Hero ────────────────── */
-          <>
-            <div className={styles.hero}>
-              <div className={styles.badge}>
-                <span className={styles.badgeDot} />
-                Cloud Sync Active · Verified Account
-              </div>
-
-              <h1 className={styles.heading}>
-                Shorten any URL
-                <br />
-                <span className={styles.headingGradient}>in one click</span>
-              </h1>
-
-              <p className={styles.subheading}>
-                Paste your long link below and manage your permanent Lynq portfolio.
-              </p>
-            </div>
-
-            {/* Input Area */}
-            <div className={styles.inputSection} id="shorten-input-container">
-              <UrlInput onShorten={handleShorten} isLoading={isLoading} />
-            </div>
-          </>
+          /* ── Logged In Workspace (Direct Clean Input) ── */
+          <div className={styles.inputSection} id="shorten-input-container">
+            <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+          </div>
         )}
 
         {/* ── Bulk CSV Upload ─────────────────────────── */}
@@ -460,8 +440,10 @@ export default function Home({ theme, onToggleTheme, addToast }) {
         )}
       </main>
 
-      {/* ── Minimal Footer (only for signed-in dashboard) ──── */}
-      {isSignedIn && (
+      {/* ── Footer ─────────────────────────────────── */}
+      {!isSignedIn ? (
+        <LandingFooter />
+      ) : (
         <footer className={styles.footer}>
           <div className={styles.footerInner}>
             <span>Built with ⚡ by Lynq</span>
