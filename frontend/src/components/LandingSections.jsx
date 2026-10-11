@@ -284,7 +284,7 @@ export default function LandingSections({ hasClerk, onScrollToInput }) {
 
           <div className={styles.ctaButtons}>
             {hasClerk ? (
-              <SignInButton mode="modal">
+              <SignInButton mode="modal" oauthFlow="popup">
                 <button type="button" className={styles.ctaPrimaryBtn}>
                   Create Free Account →
                 </button>

@@ -15,6 +15,10 @@ function Root() {
     const isDark = theme === 'dark';
     return {
       baseTheme: isDark ? dark : undefined,
+      layout: {
+        unsafe_disableDevelopmentModeWarnings: true,
+        logoPlacement: 'none',
+      },
       variables: {
         colorPrimary: '#6366f1',
         colorBackground: isDark ? '#12121f' : '#ffffff',
@@ -26,6 +30,14 @@ function Root() {
         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
       },
       elements: {
+        footer: {
+          '& > div:not([class*="footerAction"])': {
+            display: 'none !important',
+          },
+        },
+        footerPages: {
+          display: 'none !important',
+        },
         card: {
           border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: isDark ? '0 24px 56px rgba(0, 0, 0, 0.65)' : '0 16px 36px rgba(0, 0, 0, 0.12)',

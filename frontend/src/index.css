@@ -245,3 +245,26 @@ input[type="number"] {
   animation: spin 0.7s linear infinite;
   display: inline-block;
 }
+
+/* ── Hide Clerk Watermark, Logo & Development Banner ─────── */
+.cl-footer > div:not(.cl-footerAction),
+.cl-footerAction + div,
+.cl-footerAction + span,
+.cl-footerAction + p,
+.cl-footer [class*="badge"],
+.cl-footer [class*="securedBy"],
+.cl-footer [class*="developmentMode"],
+.cl-footer a[href*="clerk.com"],
+.cl-footer svg[data-icon="clerk"],
+.cl-footer [data-localization-key="footer.securedBy"],
+.cl-internal-b3fm6y,
+.cl-internal-1dauvpw,
+.cl-internal-phfxk4,
+.cl-footerPages,
+[class*="cl-footer"] > [class*="internal"]:not(:has(a[href*="sign-up"])):not(:has(a[href*="sign-in"])) {
+  display: none !important;
+}
+
+.cl-footer > *:not(.cl-footerAction):not(:has(.cl-footerActionLink)) {
+  display: none !important;
+}
