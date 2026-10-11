@@ -14,6 +14,7 @@ import RecentUrls from '../components/RecentUrls.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import BulkUpload from '../components/BulkUpload.jsx';
 import UserPortfolio from '../components/UserPortfolio.jsx';
+import LandingSections from '../components/LandingSections.jsx';
 
 import styles from './Home.module.css';
 
@@ -26,6 +27,15 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
+
+  const scrollToInput = useCallback(() => {
+    const el = document.getElementById('shorten-input-container');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      const input = el.querySelector('input');
+      if (input) input.focus();
+    }
+  }, []);
 
   const handleShorten = useCallback(async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null, routingRules = null) => {
     setIsLoading(true);
@@ -242,22 +252,23 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.logo}>
-          <div className={styles.logoMark}>
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
-              <g transform="translate(6.4, 6.4) scale(0.8)" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </g>
-              <defs>
-                <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#6366f1"/><stop offset="1" stopColor="#8b5cf6"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <div className={styles.logoMark}>
+              <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
+                <g transform="translate(6.4, 6.4) scale(0.8)" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </g>
+                <defs>
+                  <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#6366f1"/><stop offset="1" stopColor="#8b5cf6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <span className={styles.logoText}>Lynq</span>
           </div>
-          <span className={styles.logoText}>Lynq</span>
-        </div>
+
 
           <div className={styles.headerRight}>
             {hasClerk && (
@@ -315,29 +326,104 @@ export default function Home({ theme, onToggleTheme, addToast }) {
         </div>
       </header>
 
-      {/* ── Hero ───────────────────────────────────── */}
-      <main className={styles.main}>
-        <div className={styles.hero}>
-          <div className={styles.badge}>
-            <span className={styles.badgeDot} />
-            No login required · Instant · Free
+      {/* ── Main Content Area ────────────────────────── */}
+      <main className={`${styles.main} ${!isSignedIn ? styles.mainLanding : ''}`}>
+        {!isSignedIn ? (
+          /* ── Landing Page Two-Column Hero ───────────── */
+          <div className={styles.heroGrid}>
+            <div className={styles.heroLeft}>
+              <div className={styles.heroLeftBadge}>
+                <span className={styles.badgeDot} />
+                Next-Gen Link Platform · Instant · Free
+              </div>
+
+              <h1 className={styles.heroTitle}>
+                URL shortener
+                <br />
+                <span className={styles.heroTitleGradient}>with analytics</span>
+              </h1>
+
+              <p className={styles.heroDesc}>
+                Free custom link shortener with real-time telemetry, geo-routing, and smart link targeting to optimize every redirect.
+              </p>
+
+              <div className={styles.heroCtaRow}>
+                {hasClerk ? (
+                  <SignInButton mode="modal">
+                    <button type="button" className={styles.heroPrimaryBtn}>
+                      <span>Get Started Free</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </SignInButton>
+                ) : (
+                  <button type="button" className={styles.heroPrimaryBtn} onClick={scrollToInput}>
+                    <span>Shorten Link Now</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+
+                <button 
+                  type="button" 
+                  className={styles.heroSecondaryBtn}
+                  onClick={() => document.getElementById('showcase')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
+                  </svg>
+                  <span>See Live Demo</span>
+                </button>
+              </div>
+
+              <div className={styles.heroTrustBullets}>
+                <div className={styles.heroTrustItem}>
+                  <span className={styles.heroCheckIcon}>✓</span> Free forever plan
+                </div>
+                <div className={styles.heroTrustItem}>
+                  <span className={styles.heroCheckIcon}>✓</span> No credit card required
+                </div>
+                <div className={styles.heroTrustItem}>
+                  <span className={styles.heroCheckIcon}>✓</span> &lt;15ms redirect latency
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.heroRight} id="shorten-input-container">
+              <div className={styles.heroRightCard}>
+                <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+              </div>
+            </div>
           </div>
+        ) : (
+          /* ── Logged In Workspace Hero ────────────────── */
+          <>
+            <div className={styles.hero}>
+              <div className={styles.badge}>
+                <span className={styles.badgeDot} />
+                Cloud Sync Active · Verified Account
+              </div>
 
-          <h1 className={styles.heading}>
-            Shorten any URL
-            <br />
-            <span className={styles.headingGradient}>in one click</span>
-          </h1>
+              <h1 className={styles.heading}>
+                Shorten any URL
+                <br />
+                <span className={styles.headingGradient}>in one click</span>
+              </h1>
 
-          <p className={styles.subheading}>
-            Paste your long link below and get a clean, shareable Lynq instantly.
-          </p>
-        </div>
+              <p className={styles.subheading}>
+                Paste your long link below and manage your permanent Lynq portfolio.
+              </p>
+            </div>
 
-        {/* ── Input Area ─────────────────────────────── */}
-        <div className={styles.inputSection}>
-          <UrlInput onShorten={handleShorten} isLoading={isLoading} />
-        </div>
+            {/* Input Area */}
+            <div className={styles.inputSection} id="shorten-input-container">
+              <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+            </div>
+          </>
+        )}
 
         {/* ── Bulk CSV Upload ─────────────────────────── */}
         <div className={styles.inputSection}>
@@ -346,7 +432,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
 
         {/* ── Result Area ────────────────────────────── */}
         {result && (
-          <div className={styles.resultSection}>
+          <div className={styles.resultSection} id="result-section">
             <div className={styles.resultMain}>
               <ResultCard result={result} onCopy={handleCopy} />
               <Analytics data={result} />
@@ -367,22 +453,29 @@ export default function Home({ theme, onToggleTheme, addToast }) {
             />
           </div>
         )}
+
+        {/* ── Rich Landing Page Content (when !isSignedIn) ─── */}
+        {!isSignedIn && (
+          <LandingSections hasClerk={hasClerk} onScrollToInput={scrollToInput} />
+        )}
       </main>
 
-      {/* ── Footer ─────────────────────────────────── */}
-      <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <span>Built with ⚡ by Lynq</span>
-          <span className={styles.dot}>·</span>
-          <span>Open Source URL Shortener</span>
-          <span className={styles.dot}>·</span>
-          <span>Redis-powered</span>
-          <span className={styles.dot}>·</span>
-          <span>Blazing fast</span>
-          <span className={styles.dot}>·</span>
-          <span>No Ads. No Tracking.</span>
-        </div>
-      </footer>
+      {/* ── Minimal Footer (only for signed-in dashboard) ──── */}
+      {isSignedIn && (
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <span>Built with ⚡ by Lynq</span>
+            <span className={styles.dot}>·</span>
+            <span>Open Source URL Shortener</span>
+            <span className={styles.dot}>·</span>
+            <span>Redis-powered</span>
+            <span className={styles.dot}>·</span>
+            <span>Blazing fast</span>
+            <span className={styles.dot}>·</span>
+            <span>No Ads. No Tracking.</span>
+          </div>
+        </footer>
+      )}
 
       {/* ── User Portfolio Modal ──────────────────────── */}
       <UserPortfolio
