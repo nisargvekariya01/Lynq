@@ -160,4 +160,14 @@ export const resolveAndTrack = async (shortCode) => {
   return data; // { success, result: { requiresPassword, originalUrl } }
 };
 
+/**
+ * Get Server-Sent Events URL for live click activity.
+ * @param {string} shortCode
+ * @returns {string}
+ */
+export const getLiveStreamUrl = (shortCode) => {
+  const base = import.meta.env.VITE_API_URL || "/api";
+  return `${base}/live/${encodeURIComponent(shortCode)}`;
+};
+
 export default api;

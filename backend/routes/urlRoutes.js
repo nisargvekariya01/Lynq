@@ -7,6 +7,7 @@ import {
   handleDeleteUrl,
   handleCheckAlias,
   handleResolveAndTrack,
+  handleLiveStream,
 } from "../controllers/urlController.js";
 import { handleCheckStatus } from "../controllers/statusController.js";
 import { handleBulkShorten } from "../controllers/bulkController.js";
@@ -27,6 +28,9 @@ router.delete("/shorten/:shortCode", handleDeleteUrl);
 
 // GET /api/info/:shortCode
 router.get("/info/:shortCode", handleGetInfo);
+
+// GET /api/live/:shortCode (Server-Sent Events for real-time clicks)
+router.get("/live/:shortCode", handleLiveStream);
 
 // GET /api/resolve/:shortCode
 router.get("/resolve/:shortCode", handleResolveAndTrack);

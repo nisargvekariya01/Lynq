@@ -1,4 +1,5 @@
 import env from "../config/env.js";
+import eventBus from "../config/eventBus.js";
 import {
   shortenUrl,
   resolveUrl,
@@ -213,4 +214,38 @@ export const handleCheckAlias = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * GET /api/live/:shortCode
+ * Server-Sent Events (SSE) endpoint streaming real-time clicks for a shortCode.
+ */
+export const handleLiveStream = (req, res) => {
+  const { shortCode } = req.params;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+
+  // Initial connection handshake
+  res.write(
+    `data: ${JSON.stringify({ type: "connected", shortCode, ts: Date.now() })}\n\n`,
+  );
+
+  const clickListener = (event) => {
+    res.write(`data: ${JSON.stringify({ type: "click", ...event })}\n\n`);
+  };
+
+  eventBus.on(`click:${shortCode}`, clickListener);
+
+  const heartbeat = setInterval(() => {
+    res.write(": heartbeat\n\n");
+  }, 15000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    eventBus.off(`click:${shortCode}`, clickListener);
+  });
 };

@@ -1,79 +1,217 @@
+/* ============================================================
+   Lynq — Modern Enterprise Analytics Dashboard Styles
+   ============================================================ */
+
 .container {
   background: var(--bg-glass);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 16px 20px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  padding: 20px 24px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   animation: fadeInUp 0.4s var(--ease-out) forwards;
   box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
 }
 
+/* ── Top Header ─────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
 }
 
+.headerIcon {
+  color: var(--color-primary-light);
+}
+
+/* ── Live Pulse Badge ───────────────────────────────────── */
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  letter-spacing: 0.03em;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* ── Live Click Ticker Banner ────────────────────────────── */
+.liveTicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-primary);
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tickerContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tickerTag {
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tickerTime {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Key Metrics Stats Grid ─────────────────────────────── */
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+  margin-bottom: 20px;
 }
 
 .statBox {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--bg-elevated);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  transition: border-color 0.2s, transform 0.2s;
+  transition: all 0.2s var(--ease-out);
 }
 
 .statBox:hover {
   border-color: var(--color-primary);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
-.statIcon { font-size: 18px; }
+.statIcon {
+  font-size: 20px;
+  line-height: 1;
+}
 
 .statValue {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1;
+  line-height: 1.1;
   margin-bottom: 3px;
 }
 
 .statLabel {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
-.chartSection {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px dashed var(--border);
+/* ── Navigation Tabs ────────────────────────────────────── */
+.tabsContainer {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  gap: 4px;
+  overflow-x: auto;
 }
 
+.tabButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  white-space: nowrap;
+}
+
+.tabButton:hover {
+  color: var(--text-primary);
+}
+
+.activeTab {
+  background: var(--grad-brand);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* ── Section Wrapper ────────────────────────────────────── */
+.viewSection {
+  animation: fadeIn 0.3s var(--ease-out) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Timeline Section ───────────────────────────────────── */
 .chartHeader {
   display: flex;
   justify-content: space-between;
@@ -82,21 +220,21 @@
 }
 
 .chartTitle {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  letter-spacing: 0.05em;
 }
 
 .toggleContainer {
   position: relative;
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   border-radius: var(--radius-full);
   padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  width: 130px; /* Fixed width to contain the buttons evenly */
+  border: 1px solid var(--border);
+  width: 140px;
 }
 
 .toggleSlider {
@@ -107,8 +245,8 @@
   height: calc(100% - 6px);
   background: var(--bg-elevated);
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transition: transform 0.25s var(--ease-out);
   z-index: 1;
 }
 
@@ -125,23 +263,258 @@
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 600;
-  padding: 5px 0;
+  padding: 4px 0;
   cursor: pointer;
-  transition: color 0.3s;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   text-align: center;
-}
-
-.toggleButton:hover {
-  color: var(--text-primary);
+  transition: color 0.2s;
+  text-transform: uppercase;
 }
 
 .activeText {
   color: var(--color-primary-light);
 }
 
+.chartWrapper {
+  width: 100%;
+}
+
+/* ── Geography Section ──────────────────────────────────── */
+.geoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cardPanel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+.countryList, .cityList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.geoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.geoMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.geoName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.flag {
+  font-size: 16px;
+}
+
+.geoCount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.geoCountStrong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.progressBarTrack {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, #6366f1 0%, #06b6d4 100%);
+  transition: width 0.6s var(--ease-out);
+}
+
+/* ── Devices & Tech Charts Grid ─────────────────────────── */
+.techGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 16px;
+}
+
+.donutWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.chartCenterLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.donutLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.breakdownStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pillRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pillMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+/* ── Referrers & Traffic Sources Table ──────────────────── */
+.sourcesTable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sourceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.sourceRow:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateX(2px);
+}
+
+.sourceLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sourceIcon {
+  font-size: 18px;
+}
+
+.sourceDomain {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sourceCategory {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sourceRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sourceShare {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sourceClicks {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Empty State ────────────────────────────────────────── */
+.emptyNotice {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .geoGrid, .techGrid {
+    grid-template-columns: 1fr;
+  }
+  .container {
+    padding: 16px;
+  }
+}
+
 @media (max-width: 480px) {
-  .stats { grid-template-columns: 1fr; gap: 8px; }
-  .container { padding: 14px 16px; }
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  .tabsContainer {
+    flex-wrap: wrap;
+    border-radius: var(--radius-md);
+  }
 }

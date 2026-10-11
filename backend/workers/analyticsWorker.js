@@ -3,6 +3,7 @@ import pool from "../config/db.js";
 import crypto from "crypto";
 import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
+import eventBus from "../config/eventBus.js";
 
 const parseReferrer = (rawReferrer) => {
   if (!rawReferrer || typeof rawReferrer !== "string") return "direct";
@@ -118,6 +119,7 @@ export const startAnalyticsWorker = () => {
         const urlClicksMap = {};
         const urlLastVisitMap = {};
         const seenUniqueInBatch = new Set();
+        const eventsToEmit = [];
 
         validClicks.forEach((click) => {
           const visitorString = `${click.ip}-${click.userAgent}`;
@@ -158,6 +160,17 @@ export const startAnalyticsWorker = () => {
             os,
             referrer,
           );
+
+          eventsToEmit.push({
+            shortCode: click.shortCode,
+            country: country || "Unknown",
+            city: city || "Unknown",
+            device: deviceType,
+            browser,
+            os,
+            referrer,
+            timestamp: click.timestamp,
+          });
 
           const uniqueKey = `${click.shortCode}:${visitorHash}`;
           if (!seenUniqueInBatch.has(uniqueKey)) {
@@ -219,6 +232,11 @@ export const startAnalyticsWorker = () => {
 
         // ── Success: clear retry counter for this batch ───────────────────────
         retryCounters.delete(batchKey);
+
+        // Phase 3 (Task 3.4): Broadcast committed click events via SSE
+        for (const evt of eventsToEmit) {
+          eventBus.emit(`click:${evt.shortCode}`, evt);
+        }
 
         console.log(
           `✅ Worker bulk-processed ${clicks.length} analytics events.`,
