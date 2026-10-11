@@ -3,6 +3,7 @@ import env from "../config/env.js";
 import { generateShortCode } from "../utils/codeGenerator.js";
 import { isValidUrl, normaliseUrl } from "../utils/validator.js";
 import crypto from "crypto"; // For generating edit tokens
+import redisClient from "../config/redis.js"; // Phase 1: Redis caching for instant redirects
 
 /**
  * Bulk-shortens an array of URL rows from a CSV upload.
@@ -118,13 +119,39 @@ export const bulkShortenUrls = async (rows, deviceId = null) => {
       const editToken = crypto.randomBytes(16).toString("hex");
       const expiresInDays = 30; // default expiry for bulk links
 
-      await pool.query(
+      const { rows: insertedRows } = await pool.query(
         `
         INSERT INTO urls (short_code, original_url, password_hash, max_clicks, expires_at, edit_token, title, tags, device_id)
         VALUES ($1, $2, NULL, NULL, CURRENT_TIMESTAMP + ($3 || ' days')::interval, $4, $5, NULL, $6)
+        RETURNING id, expires_at
       `,
         [shortCode, originalUrl, expiresInDays, editToken, title, deviceId],
       );
+
+      // Phase 1 (Task 1.2): Instantly pipeline new short code into Redis so
+      // the FIRST click resolves via the <15ms fast path, not the DB slow path.
+      try {
+        const inserted = insertedRows[0];
+        await redisClient
+          .multi()
+          .hSet(`url:${shortCode}`, {
+            original_url: originalUrl,
+            password_hash: "",
+            max_clicks: "",
+            expires_at: inserted.expires_at
+              ? new Date(inserted.expires_at).toISOString()
+              : "",
+            id: inserted.id.toString(),
+          })
+          .expire(`url:${shortCode}`, 86400) // 24hr TTL matches shortenUrl()
+          .exec();
+      } catch (redisErr) {
+        // Non-fatal: link still works via the DB slow-path fallback
+        console.error(
+          `Redis bulk cache set failed for ${shortCode}:`,
+          redisErr.message,
+        );
+      }
 
       results.push({
         originalUrl,

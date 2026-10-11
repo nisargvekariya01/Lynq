@@ -4,14 +4,40 @@ import crypto from "crypto";
 
 const BATCH_SIZE = 500;
 const INTERVAL_MS = 5000;
+const MAX_RETRIES = 3; // Phase 1 (Task 1.3): max DB retry attempts per batch
+
+/**
+ * Phase 1 (Task 1.3): Tracks how many consecutive failures a batch of raw
+ * items has seen. Keyed by a hash of the first item so retried batches are
+ * recognised across intervals.  Cleared on success.
+ */
+const retryCounters = new Map();
+
+/**
+ * Guard flag to prevent overlapping worker executions when a slow DB
+ * transaction spans more than one INTERVAL_MS tick.
+ */
+let isProcessing = false;
 
 export const startAnalyticsWorker = () => {
   console.log("👷 v2 Analytics Worker started. Processing queue every 5s...");
 
   setInterval(async () => {
+    // Phase 1 (Task 1.3): Skip tick if the previous batch is still in-flight.
+    if (isProcessing) {
+      console.warn("⚠️  Analytics worker: previous batch still running, skipping tick.");
+      return;
+    }
+
+    isProcessing = true;
+    let rawItems = null;
+
     try {
       const queueLen = await redisClient.lLen("analytics_queue");
-      if (queueLen === 0) return;
+      if (queueLen === 0) {
+        isProcessing = false;
+        return;
+      }
 
       const itemsToFetch = Math.min(queueLen, BATCH_SIZE);
 
@@ -19,15 +45,38 @@ export const startAnalyticsWorker = () => {
       multi.lRange("analytics_queue", 0, itemsToFetch - 1);
       multi.lTrim("analytics_queue", itemsToFetch, -1);
 
-      const [rawItems] = await multi.exec();
+      const [fetched] = await multi.exec();
+      rawItems = fetched;
 
-      if (!rawItems || rawItems.length === 0) return;
+      if (!rawItems || rawItems.length === 0) {
+        isProcessing = false;
+        return;
+      }
+
+      // Build a stable key for this batch to track retries
+      const batchKey = rawItems[0];
 
       const clicks = rawItems.map((item) => JSON.parse(item));
 
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+
+        // Phase 1 (Task 1.3): Filter out clicks for deleted/expired short codes
+        // to prevent foreign-key constraint violations on click_history.
+        const candidateCodes = [...new Set(clicks.map((c) => c.shortCode))];
+        const { rows: existingRows } = await client.query(
+          "SELECT short_code FROM urls WHERE short_code = ANY($1)",
+          [candidateCodes],
+        );
+        const validCodeSet = new Set(existingRows.map((r) => r.short_code));
+        const validClicks = clicks.filter((c) => validCodeSet.has(c.shortCode));
+
+        if (validClicks.length === 0) {
+          await client.query("COMMIT");
+          retryCounters.delete(batchKey);
+          return;
+        }
 
         let historyValues = [];
         let historyQueryStr =
@@ -43,7 +92,7 @@ export const startAnalyticsWorker = () => {
         const urlLastVisitMap = {};
         const seenUniqueInBatch = new Set();
 
-        clicks.forEach((click) => {
+        validClicks.forEach((click) => {
           const visitorString = `${click.ip}-${click.userAgent}`;
           const visitorHash = crypto
             .createHash("md5")
@@ -115,19 +164,61 @@ export const startAnalyticsWorker = () => {
         }
 
         await client.query("COMMIT");
+
+        // ── Success: clear retry counter for this batch ───────────────────────
+        retryCounters.delete(batchKey);
+
         console.log(
           `✅ Worker bulk-processed ${clicks.length} analytics events.`,
         );
       } catch (dbErr) {
         await client.query("ROLLBACK");
-        console.error("❌ Bulk analytics transaction failed:", dbErr.message);
-        // Put the items back in the queue if DB fails (prevents data loss)
-        await redisClient.lPush("analytics_queue", rawItems);
+
+        // Phase 1 (Task 1.3): Retry logic with exponential backoff cap.
+        const attempts = (retryCounters.get(batchKey) || 0) + 1;
+
+        if (attempts < MAX_RETRIES) {
+          // Put items back at the FRONT of the queue to be retried next tick.
+          retryCounters.set(batchKey, attempts);
+          await redisClient.lPush("analytics_queue", rawItems);
+          console.error(
+            `❌ Analytics DB transaction failed (attempt ${attempts}/${MAX_RETRIES}), re-queued ${rawItems.length} events:`,
+            dbErr.message,
+          );
+        } else {
+          // Poison batch: discard after MAX_RETRIES to prevent infinite stalling.
+          retryCounters.delete(batchKey);
+          console.error(
+            `⚠️  Analytics batch exceeded ${MAX_RETRIES} retries and was DISCARDED (${rawItems.length} events). Last error:`,
+            dbErr.message,
+          );
+        }
       } finally {
         client.release();
       }
     } catch (err) {
-      console.error("❌ Analytics worker error:", err.message);
+      // Phase 1 (Task 1.3): Outer catch — Redis or pool.connect() failures.
+      // If we already dequeued items and something exploded before the DB
+      // transaction, push them back so no analytics data is silently lost.
+      if (rawItems && rawItems.length > 0) {
+        try {
+          await redisClient.lPush("analytics_queue", rawItems);
+          console.error(
+            `❌ Analytics worker outer error — re-queued ${rawItems.length} events:`,
+            err.message,
+          );
+        } catch (pushErr) {
+          console.error(
+            "❌ Failed to re-queue analytics events after outer error:",
+            pushErr.message,
+          );
+        }
+      } else {
+        console.error("❌ Analytics worker error:", err.message);
+      }
+    } finally {
+      // Always release the processing lock, even on unexpected throws.
+      isProcessing = false;
     }
   }, INTERVAL_MS);
 };

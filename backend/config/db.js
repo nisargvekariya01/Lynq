@@ -97,7 +97,33 @@ export const initDb = async () => {
       // Constraint likely already exists, ignore
     }
 
-    console.log("✅ PostgreSQL Schema Verified");
+    // ── Phase 1: Composite Performance Indexes ────────────────────────────────
+    // All use IF NOT EXISTS so they are safe to re-run on every cold-start.
+    // These run on the pool (not a dedicated client) so Neon won't block other
+    // queries while indexes are being created on an empty / small table.
+
+    // Index 1: Speeds up all analytics timeline queries filtered by short_code
+    //          and ordered by clicked_at DESC (used in getUrlInfo history query).
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_click_history_code_time
+        ON click_history (short_code, clicked_at DESC);
+    `);
+
+    // Index 2: Speeds up the duplicate-URL-per-device lookup in shortenUrl()
+    //          and bulkShortenUrls() — avoids full sequential scan on urls.
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_urls_original_device
+        ON urls (original_url, device_id);
+    `);
+
+    // Index 3: Partial index — only indexes rows that actually have an expiry.
+    //          Accelerates expiry-check queries and future cleanup jobs.
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_urls_expires_at
+        ON urls (expires_at) WHERE expires_at IS NOT NULL;
+    `);
+
+    console.log("✅ PostgreSQL Schema & Indexes Verified");
   } catch (err) {
     console.error("❌ Failed to initialize PostgreSQL:", err);
     process.exit(1);
