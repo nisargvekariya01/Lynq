@@ -51,6 +51,7 @@ export const handleShorten = async (req, res, next) => {
       title || null,
       tags || null,
       deviceId || null,
+      req.userId || null,
     );
 
     return res.status(result.isExisting ? 200 : 201).json({

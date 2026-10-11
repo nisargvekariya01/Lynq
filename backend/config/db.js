@@ -39,6 +39,7 @@ export const initDb = async () => {
         clicks INTEGER DEFAULT 0,
         edit_token VARCHAR(255),
         device_id VARCHAR(255),
+        user_id VARCHAR(255),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         last_visited TIMESTAMP WITH TIME ZONE,
         expires_at TIMESTAMP WITH TIME ZONE
@@ -115,6 +116,16 @@ export const initDb = async () => {
       `);
     } catch (e) {
       // Columns likely already exist, ignore
+    }
+
+    // ── Phase 4: Hybrid Auth Schema Upgrade ─────────────────────────────────
+    try {
+      await pool.query(`
+        ALTER TABLE urls ADD COLUMN IF NOT EXISTS user_id VARCHAR(255);
+        CREATE INDEX IF NOT EXISTS idx_urls_user_id ON urls (user_id);
+      `);
+    } catch (e) {
+      // Column/index likely already exist, ignore
     }
 
     // ── Phase 1: Composite Performance Indexes ────────────────────────────────

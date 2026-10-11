@@ -18,6 +18,10 @@ const env = {
   shortCodeLength: parseInt(process.env.SHORT_CODE_LENGTH, 10) || 6,
   nodeEnv: process.env.NODE_ENV || "development",
   geminiApiKey: process.env.GEMINI_API_KEY || "",
+  clerk: {
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY || "",
+    secretKey: process.env.CLERK_SECRET_KEY || "",
+  },
 };
 
 export default env;

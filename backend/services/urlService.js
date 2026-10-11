@@ -15,6 +15,7 @@ export const shortenUrl = async (
   title = null,
   tags = null,
   deviceId = null,
+  userId = null,
 ) => {
   const originalUrl = normaliseUrl(rawUrl);
 
@@ -118,8 +119,8 @@ export const shortenUrl = async (
 
   const { rows: insertRows } = await pool.query(
     `
-    INSERT INTO urls (short_code, original_url, password_hash, max_clicks, expires_at, edit_token, title, tags, device_id)
-    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP + ($5 || ' days')::interval, $6, $7, $8, $9)
+    INSERT INTO urls (short_code, original_url, password_hash, max_clicks, expires_at, edit_token, title, tags, device_id, user_id)
+    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP + ($5 || ' days')::interval, $6, $7, $8, $9, $10)
     RETURNING *
   `,
     [
@@ -132,6 +133,7 @@ export const shortenUrl = async (
       title,
       tags,
       deviceId,
+      userId || null,
     ],
   );
 

@@ -11,6 +11,16 @@ const getDeviceId = () => {
   return deviceId;
 };
 
+let authTokenGetter = null;
+
+/**
+ * Configure dynamic JWT getter (provided by Clerk useAuth)
+ * @param {Function} getter
+ */
+export const setAuthTokenGetter = (getter) => {
+  authTokenGetter = getter;
+};
+
 /**
  * Axios instance — routes through Vite proxy (/api → localhost:5000)
  * in development, and directly to BASE_URL in production.
@@ -20,6 +30,20 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
+});
+
+api.interceptors.request.use(async (config) => {
+  if (authTokenGetter) {
+    try {
+      const token = await authTokenGetter();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // Continue without token
+    }
+  }
+  return config;
 });
 
 /**
@@ -168,6 +192,34 @@ export const resolveAndTrack = async (shortCode) => {
 export const getLiveStreamUrl = (shortCode) => {
   const base = import.meta.env.VITE_API_URL || "/api";
   return `${base}/live/${encodeURIComponent(shortCode)}`;
+};
+
+/**
+ * Claim anonymous guest links to the signed-in user's account.
+ * @param {Array<{shortCode: string, editToken: string}>} links
+ * @returns {Promise<object>}
+ */
+export const claimUserLinks = async (links) => {
+  const { data } = await api.post("/user/claim-links", { links });
+  return data; // { success, claimedCount, claimedCodes }
+};
+
+/**
+ * Get all links owned by the authenticated user.
+ * @returns {Promise<object>}
+ */
+export const getUserLinks = async () => {
+  const { data } = await api.get("/user/links");
+  return data; // { success, count, links }
+};
+
+/**
+ * Get user analytics summary across all owned links.
+ * @returns {Promise<object>}
+ */
+export const getUserAnalyticsSummary = async () => {
+  const { data } = await api.get("/user/analytics/summary");
+  return data; // { success, summary: { totalClicks, totalLinks, activeLinks, topLinks } }
 };
 
 export default api;

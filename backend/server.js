@@ -10,6 +10,8 @@ import pool, { initDb } from "./config/db.js";
 import env from "./config/env.js";
 import urlRoutes from "./routes/urlRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import { clerkMiddleware } from "@clerk/express";
 import { handleRedirect } from "./controllers/urlController.js";
 import { createLimiters } from "./middlewares/rateLimiter.js";
 import { enforceHttps } from "./middlewares/security.js";
@@ -36,10 +38,25 @@ app.use(
       env.frontendUrl, // Crucial for Vercel deployment!
     ],
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-test-user-id"],
   }),
 );
 app.use(express.json({ limit: "10kb" }));
+
+// ── Clerk Auth Session Middleware ────────────────────────────────────────────
+if (env.clerk.secretKey) {
+  try {
+    app.use(
+      clerkMiddleware({
+        secretKey: env.clerk.secretKey,
+        publishableKey: env.clerk.publishableKey,
+      }),
+    );
+  } catch (err) {
+    console.warn("⚠️ Clerk middleware init warning:", err.message);
+  }
+}
+
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 
 // ── Health Check ─────────────────────────────────────────────────────────────
@@ -90,6 +107,7 @@ const start = async () => {
     // ── API Routes ───────────────────────────────────────────────────────────
     app.use("/api", urlRoutes);
     app.use("/api/ai", aiRoutes);
+    app.use("/api/user", userRoutes);
 
     // ── Short Code Redirect ──────────────────────────────────────────────────
     // Must come AFTER /api/* routes to avoid conflicts

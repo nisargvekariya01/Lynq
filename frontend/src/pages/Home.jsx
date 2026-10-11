@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
+import { SignInButton, UserButton } from '@clerk/clerk-react';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import { useLynqAuth } from '../context/AuthContext.jsx';
 
 import UrlInput from '../components/UrlInput.jsx';
 import ResultCard from '../components/ResultCard.jsx';
@@ -9,14 +11,17 @@ import Analytics from '../components/Analytics.jsx';
 import RecentUrls from '../components/RecentUrls.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import BulkUpload from '../components/BulkUpload.jsx';
+import UserPortfolio from '../components/UserPortfolio.jsx';
 
 import styles from './Home.module.css';
 
 const MAX_RECENT_STORAGE = 1000;
 
 export default function Home({ theme, onToggleTheme, addToast }) {
+  const { isSignedIn, hasClerk } = useLynqAuth();
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPortfolio, setShowPortfolio] = useState(false);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
 
   const handleShorten = useCallback(async (url, customAlias = null, password = null, expiresInDays = null, maxClicks = null, title = null, tags = null) => {
@@ -211,7 +216,39 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           <span className={styles.logoText}>Lynq</span>
         </div>
 
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <div className={styles.headerRight}>
+            {hasClerk && (
+              isSignedIn ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.myLinksBtn}
+                    onClick={() => setShowPortfolio(true)}
+                    title="View My Cloud Links & Portfolio"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    <span>My Links</span>
+                  </button>
+                  <UserButton afterSignOutUrl="/" />
+                </>
+              ) : (
+                <SignInButton mode="modal">
+                  <button type="button" className={styles.signInBtn}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                      <polyline points="10 17 15 12 10 7" />
+                      <line x1="15" y1="12" x2="3" y2="12" />
+                    </svg>
+                    <span>Sign In</span>
+                  </button>
+                </SignInButton>
+              )
+            )}
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          </div>
         </div>
       </header>
 
@@ -283,6 +320,14 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           <span>No Ads. No Tracking.</span>
         </div>
       </footer>
+
+      {/* ── User Portfolio Modal ──────────────────────── */}
+      <UserPortfolio
+        isOpen={showPortfolio}
+        onClose={() => setShowPortfolio(false)}
+        onSelectLink={handleSelectRecent}
+        addToast={addToast}
+      />
     </div>
   );
 }

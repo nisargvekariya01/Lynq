@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { optionalAuth } from "../middlewares/auth.js";
 import {
   handleShorten,
   handleGetInfo,
@@ -15,7 +16,7 @@ import { handleBulkShorten } from "../controllers/bulkController.js";
 const router = Router();
 
 // POST /api/shorten
-router.post("/shorten", handleShorten);
+router.post("/shorten", optionalAuth, handleShorten);
 
 // POST /api/bulk-shorten
 router.post("/bulk-shorten", handleBulkShorten);

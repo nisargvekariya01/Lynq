@@ -9,6 +9,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.78",
     "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "compression": "^1.7.4",

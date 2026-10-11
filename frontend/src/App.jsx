@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
+import { AuthProvider } from './context/AuthContext.jsx';
 import Home from './pages/Home.jsx';
 import Unlock from './pages/Unlock.jsx';
 import Preview from './pages/Preview.jsx';
@@ -15,12 +16,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="app" data-theme={theme}>
-        <Routes>
-          <Route 
-            path="/" 
-            element={<Home theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
-          />
+      <AuthProvider onClaimSuccess={(count) => addToast(`🎉 Synced your guest links to your account! (${count} links claimed)`, 'success')}>
+        <div className="app" data-theme={theme}>
+          <Routes>
+            <Route 
+              path="/" 
+              element={<Home theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
+            />
           <Route 
             path="/unlock/:shortCode" 
             element={<Unlock theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
@@ -45,6 +47,7 @@ export default function App() {
         <ConnectionStatus />
         <Toast toasts={toasts} onRemove={removeToast} />
       </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
