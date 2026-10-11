@@ -138,8 +138,10 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
   );
 }
 
-export default function App() {
-  const { theme, toggleTheme } = useTheme();
+export default function App({ theme: propTheme, onToggleTheme: propToggleTheme }) {
+  const themeHook = useTheme();
+  const theme = propTheme || themeHook.theme;
+  const toggleTheme = propToggleTheme || themeHook.toggleTheme;
   const { toasts, addToast, removeToast } = useToast();
 
   return (

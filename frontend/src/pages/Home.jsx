@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SignInButton, UserButton } from '@clerk/clerk-react';
+import { dark } from '@clerk/themes';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { useLynqAuth } from '../context/AuthContext.jsx';
@@ -274,7 +275,12 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                     </svg>
                     <span>My Links</span>
                   </button>
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButton
+                    afterSignOutUrl="/"
+                    appearance={{
+                      baseTheme: theme === 'dark' ? dark : undefined,
+                    }}
+                  />
                 </>
               ) : (
                 <SignInButton mode="modal">

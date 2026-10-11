@@ -11,6 +11,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.61.10",
     "@clerk/react": "^6.17.8",
+    "@clerk/themes": "^2.4.57",
     "@theme-toggles/react": "^4.1.0",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
