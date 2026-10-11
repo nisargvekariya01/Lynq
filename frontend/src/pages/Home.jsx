@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SignInButton, UserButton } from '@clerk/clerk-react';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
@@ -19,6 +20,7 @@ const MAX_RECENT_STORAGE = 1000;
 
 export default function Home({ theme, onToggleTheme, addToast }) {
   const { isSignedIn, hasClerk } = useLynqAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPortfolio, setShowPortfolio] = useState(false);
@@ -110,9 +112,49 @@ export default function Home({ theme, onToggleTheme, addToast }) {
     }
   }, []);
 
+  // Listen for selection from Command Palette or ?code= parameter
+  const codeParam = searchParams.get('code');
+  useEffect(() => {
+    if (codeParam) {
+      handleSelectRecent({ shortCode: codeParam });
+      setSearchParams({}, { replace: true });
+      setTimeout(() => {
+        document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    }
+  }, [codeParam, handleSelectRecent, setSearchParams]);
+
+  useEffect(() => {
+    const handlePaletteSelect = (e) => {
+      if (e.detail) {
+        handleSelectRecent(e.detail);
+        setTimeout(() => {
+          document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+    };
+
+    const handlePortfolioOpen = () => {
+      setShowPortfolio(true);
+    };
+
+    window.addEventListener('lynq-select-link', handlePaletteSelect);
+    window.addEventListener('lynq-open-portfolio', handlePortfolioOpen);
+
+    return () => {
+      window.removeEventListener('lynq-select-link', handlePaletteSelect);
+      window.removeEventListener('lynq-open-portfolio', handlePortfolioOpen);
+    };
+  }, [handleSelectRecent]);
+
   // Poll for live analytics updates every 5 seconds while a result is shown
   useEffect(() => {
-    if (!result?.shortCode) return;
+    if (!result?.shortCode) {
+      window.dispatchEvent(new CustomEvent('lynq-active-code', { detail: null }));
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('lynq-active-code', { detail: result.shortCode }));
 
     const interval = setInterval(async () => {
       try {
@@ -247,6 +289,21 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                 </SignInButton>
               )
             )}
+            <button
+              type="button"
+              className={styles.cmdPaletteBtn}
+              onClick={() => window.dispatchEvent(new CustomEvent('lynq-toggle-cmd'))}
+              title="Search links or commands (Cmd+K / Ctrl+K)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span className={styles.cmdPaletteBtnText}>Search</span>
+              <kbd className={styles.cmdKbd}>
+                {typeof navigator !== 'undefined' && navigator.platform?.toUpperCase().includes('MAC') ? '⌘K' : 'Ctrl+K'}
+              </kbd>
+            </button>
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           </div>
         </div>

@@ -223,6 +223,30 @@ export const getLiveStreamUrl = (shortCode) => {
 };
 
 /**
+ * Get direct download URL for link analytics CSV export.
+ * @param {string} shortCode
+ * @returns {string}
+ */
+export const getExportCsvUrl = (shortCode) => {
+  const base = import.meta.env.VITE_API_URL || "/api";
+  return `${base}/analytics/${encodeURIComponent(shortCode)}/export`;
+};
+
+/**
+ * Triggers a download of historical click telemetry in CSV format.
+ * @param {string} shortCode
+ */
+export const downloadAnalyticsCsv = (shortCode) => {
+  const url = getExportCsvUrl(shortCode);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `lynq-${shortCode}-analytics.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+/**
  * Claim anonymous guest links to the signed-in user's account.
  * @param {Array<{shortCode: string, editToken: string}>} links
  * @returns {Promise<object>}

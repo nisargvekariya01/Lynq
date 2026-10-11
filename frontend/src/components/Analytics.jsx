@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import styles from './Analytics.module.css';
-import { getLiveStreamUrl } from '../services/api';
+import { getLiveStreamUrl, downloadAnalyticsCsv } from '../services/api';
 import {
   getCountryFlag,
   getCountryName,
@@ -150,10 +150,26 @@ export default function Analytics({ data }) {
           <span>Link Intelligence & Analytics</span>
         </div>
 
-        {/* Live SSE Status Pill */}
-        <div className={styles.liveBadge} title="Real-time SSE event stream active">
-          <span className={styles.liveDot} style={{ background: liveConnected ? '#10b981' : '#eab308' }} />
-          <span>{liveConnected ? 'Live Pulse' : 'Connecting...'}</span>
+        <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={styles.exportCsvBtn}
+            onClick={() => downloadAnalyticsCsv(data.shortCode)}
+            title="Export full historical click telemetry to CSV"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Export CSV</span>
+          </button>
+
+          {/* Live SSE Status Pill */}
+          <div className={styles.liveBadge} title="Real-time SSE event stream active">
+            <span className={styles.liveDot} style={{ background: liveConnected ? '#10b981' : '#eab308' }} />
+            <span>{liveConnected ? 'Live Pulse' : 'Connecting...'}</span>
+          </div>
         </div>
       </div>
 

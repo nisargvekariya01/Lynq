@@ -252,4 +252,42 @@
   transform: translateY(-1px);
 }
 
+.cmdPaletteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cmdPaletteBtn:hover {
+  background: var(--bg-card);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.cmdPaletteBtnText {
+  font-size: 12px;
+}
+
+.cmdKbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+
 

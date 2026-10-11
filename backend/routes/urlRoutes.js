@@ -9,6 +9,7 @@ import {
   handleCheckAlias,
   handleResolveAndTrack,
   handleLiveStream,
+  handleExportCsv,
 } from "../controllers/urlController.js";
 import { handleCheckStatus } from "../controllers/statusController.js";
 import { handleBulkShorten } from "../controllers/bulkController.js";
@@ -29,6 +30,9 @@ router.delete("/shorten/:shortCode", handleDeleteUrl);
 
 // GET /api/info/:shortCode
 router.get("/info/:shortCode", handleGetInfo);
+
+// GET /api/analytics/:shortCode/export (Export CSV of historical click telemetry)
+router.get("/analytics/:shortCode/export", handleExportCsv);
 
 // GET /api/live/:shortCode (Server-Sent Events for real-time clicks)
 router.get("/live/:shortCode", handleLiveStream);

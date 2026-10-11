@@ -1,4 +1,5 @@
 import env from "../config/env.js";
+import pool from "../config/db.js";
 import eventBus from "../config/eventBus.js";
 import {
   shortenUrl,
@@ -258,3 +259,78 @@ export const handleLiveStream = (req, res) => {
     eventBus.off(`click:${shortCode}`, clickListener);
   });
 };
+
+/**
+ * GET /api/analytics/:shortCode/export
+ * Exports historical click telemetry for a short URL as a downloadable CSV.
+ */
+export const handleExportCsv = async (req, res, next) => {
+  try {
+    const { shortCode } = req.params;
+
+    const { rows: urlRows } = await pool.query(
+      "SELECT id, original_url, title FROM urls WHERE short_code = $1",
+      [shortCode],
+    );
+
+    if (urlRows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Short code not found." });
+    }
+
+    const { rows: clickRows } = await pool.query(
+      `SELECT clicked_at, country, city, device_type, browser, os, referrer 
+       FROM click_history 
+       WHERE short_code = $1 
+       ORDER BY clicked_at DESC`,
+      [shortCode],
+    );
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return "";
+      const str = String(val);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = [
+      "Timestamp",
+      "Country",
+      "City",
+      "Device",
+      "Browser",
+      "OS",
+      "Referrer",
+    ];
+    const csvLines = [headers.join(",")];
+
+    for (const row of clickRows) {
+      csvLines.push(
+        [
+          escapeCsv(row.clicked_at ? new Date(row.clicked_at).toISOString() : ""),
+          escapeCsv(row.country || "Unknown"),
+          escapeCsv(row.city || "Unknown"),
+          escapeCsv(row.device_type || "desktop"),
+          escapeCsv(row.browser || "Unknown"),
+          escapeCsv(row.os || "Unknown"),
+          escapeCsv(row.referrer || "direct"),
+        ].join(","),
+      );
+    }
+
+    const csvContent = csvLines.join("\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="lynq-${shortCode}-analytics.csv"`,
+    );
+    return res.status(200).send(csvContent);
+  } catch (err) {
+    next(err);
+  }
+};
+
