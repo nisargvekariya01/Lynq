@@ -1,6 +1,29 @@
 import redisClient from "../config/redis.js";
 import pool from "../config/db.js";
 import crypto from "crypto";
+import geoip from "geoip-lite";
+import { UAParser } from "ua-parser-js";
+
+const parseReferrer = (rawReferrer) => {
+  if (!rawReferrer || typeof rawReferrer !== "string") return "direct";
+  try {
+    const url = new URL(
+      rawReferrer.startsWith("http://") || rawReferrer.startsWith("https://")
+        ? rawReferrer
+        : `https://${rawReferrer}`,
+    );
+    let host = url.hostname.toLowerCase();
+    if (host.startsWith("www.")) host = host.slice(4);
+    return host || "direct";
+  } catch {
+    return rawReferrer.slice(0, 50) || "direct";
+  }
+};
+
+const extractCleanIp = (ip) => {
+  if (!ip || typeof ip !== "string") return "";
+  return ip.replace(/^::ffff:/, "").split(",")[0].trim();
+};
 
 const BATCH_SIZE = 500;
 const INTERVAL_MS = 5000;
@@ -23,6 +46,10 @@ export const startAnalyticsWorker = () => {
   console.log("👷 v2 Analytics Worker started. Processing queue every 5s...");
 
   setInterval(async () => {
+    if (!redisClient.isOpen) {
+      return;
+    }
+
     // Phase 1 (Task 1.3): Skip tick if the previous batch is still in-flight.
     if (isProcessing) {
       console.warn("⚠️  Analytics worker: previous batch still running, skipping tick.");
@@ -80,7 +107,7 @@ export const startAnalyticsWorker = () => {
 
         let historyValues = [];
         let historyQueryStr =
-          "INSERT INTO click_history (short_code, visitor_hash, user_agent, clicked_at) VALUES ";
+          "INSERT INTO click_history (short_code, visitor_hash, user_agent, clicked_at, country, city, device_type, browser, os, referrer) VALUES ";
         let paramIdx = 1;
 
         let uniqueValues = [];
@@ -99,12 +126,37 @@ export const startAnalyticsWorker = () => {
             .update(visitorString)
             .digest("hex");
 
-          historyQueryStr += `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}),`;
+          // Phase 2 (Task 2.3): Telemetry parsing (GeoIP, UA, Referrer)
+          const cleanIp = extractCleanIp(click.ip);
+          let country = null;
+          let city = null;
+          if (cleanIp && cleanIp !== "127.0.0.1" && cleanIp !== "::1") {
+            const geo = geoip.lookup(cleanIp);
+            if (geo) {
+              country = geo.country || null;
+              city = geo.city || null;
+            }
+          }
+
+          const parser = new UAParser(click.userAgent || "");
+          const parsedUA = parser.getResult();
+          const deviceType = parsedUA.device?.type || "desktop";
+          const browser = parsedUA.browser?.name || "Unknown";
+          const os = parsedUA.os?.name || "Unknown";
+          const referrer = parseReferrer(click.referrer);
+
+          historyQueryStr += `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}),`;
           historyValues.push(
             click.shortCode,
             visitorHash,
             click.userAgent,
             click.timestamp,
+            country,
+            city,
+            deviceType,
+            browser,
+            os,
+            referrer,
           );
 
           const uniqueKey = `${click.shortCode}:${visitorHash}`;

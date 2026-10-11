@@ -122,7 +122,8 @@ export const handleRedirect = async (req, res, next) => {
     const { shortCode } = req.params;
     const ip = req.ip || req.connection?.remoteAddress || "";
     const userAgent = req.headers["user-agent"] || "";
-    const result = await resolveUrl(shortCode, ip, userAgent);
+    const referrer = req.headers["referer"] || req.headers["referrer"] || "";
+    const result = await resolveUrl(shortCode, ip, userAgent, referrer);
 
     if (result.requiresPassword) {
       // Redirect to frontend unlock route
@@ -144,7 +145,12 @@ export const handleResolveAndTrack = async (req, res, next) => {
     const { shortCode } = req.params;
     const ip = req.ip || req.connection?.remoteAddress || "";
     const userAgent = req.headers["user-agent"] || "";
-    const result = await resolveUrl(shortCode, ip, userAgent);
+    const referrer =
+      req.headers["referer"] ||
+      req.headers["referrer"] ||
+      req.query.referrer ||
+      "";
+    const result = await resolveUrl(shortCode, ip, userAgent, referrer);
 
     return res.status(200).json({ success: true, result });
   } catch (err) {

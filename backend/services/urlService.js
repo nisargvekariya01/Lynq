@@ -166,7 +166,12 @@ export const shortenUrl = async (
   };
 };
 
-export const resolveUrl = async (shortCode, ip = "", userAgent = "") => {
+export const resolveUrl = async (
+  shortCode,
+  ip = "",
+  userAgent = "",
+  referrer = "",
+) => {
   let data = null;
 
   // 1. FAST PATH: Fetch entirely from Redis RAM
@@ -231,6 +236,7 @@ export const resolveUrl = async (shortCode, ip = "", userAgent = "") => {
       shortCode,
       ip,
       userAgent,
+      referrer,
       timestamp: new Date().toISOString(),
     });
     // Push to the right side of the list (non-blocking)
@@ -344,27 +350,109 @@ export const getUrlInfo = async (shortCode) => {
     (1000 * 60 * 60);
   const bucketInterval = durationHours <= 48 ? "hour" : "day";
 
-  const { rows: historyRows } = await pool.query(
-    `
-    SELECT 
-      DATE_TRUNC('${bucketInterval}', clicked_at) as bucket,
-      COUNT(*)::int as total_clicks,
-      COUNT(DISTINCT visitor_hash)::int as unique_clicks
-    FROM click_history 
-    WHERE short_code = $1 
-    GROUP BY bucket
-    ORDER BY bucket ASC
-  `,
-    [shortCode],
-  );
+  const [
+    historyRes,
+    deviceRes,
+    countryRes,
+    cityRes,
+    browserRes,
+    osRes,
+    referrerRes,
+  ] = await Promise.all([
+    pool.query(
+      `
+      SELECT 
+        DATE_TRUNC('${bucketInterval}', clicked_at) as bucket,
+        COUNT(*)::int as total_clicks,
+        COUNT(DISTINCT visitor_hash)::int as unique_clicks
+      FROM click_history 
+      WHERE short_code = $1 
+      GROUP BY bucket
+      ORDER BY bucket ASC
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(device_type, 'desktop') as device, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1
+      GROUP BY device_type
+      ORDER BY count DESC
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(country, 'Unknown') as country, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1 AND country IS NOT NULL AND country != ''
+      GROUP BY country
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(city, 'Unknown') as city, country, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1 AND city IS NOT NULL AND city != ''
+      GROUP BY city, country
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(browser, 'Unknown') as browser, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1
+      GROUP BY browser
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(os, 'Unknown') as os, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1
+      GROUP BY os
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT COALESCE(referrer, 'direct') as referrer, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1
+      GROUP BY referrer
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+      [shortCode],
+    ),
+  ]);
 
   return {
     shortCode,
     shortUrl: `${env.frontendUrl}/${shortCode}`,
     originalUrl: data.original_url,
+    title: data.title,
     clicks: data.clicks,
     uniqueVisitors,
-    history: historyRows,
+    history: historyRes.rows,
+    devices: deviceRes.rows,
+    countries: countryRes.rows,
+    cities: cityRes.rows,
+    browsers: browserRes.rows,
+    os: osRes.rows,
+    referrers: referrerRes.rows,
     bucketInterval,
     createdAt: data.created_at,
     lastVisited: data.last_visited,

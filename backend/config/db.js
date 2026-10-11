@@ -60,7 +60,13 @@ export const initDb = async () => {
         short_code VARCHAR(30) REFERENCES urls(short_code) ON DELETE CASCADE,
         clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         visitor_hash VARCHAR(32),
-        user_agent TEXT
+        user_agent TEXT,
+        country VARCHAR(10),
+        city VARCHAR(100),
+        device_type VARCHAR(20),
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        referrer VARCHAR(255)
       );
     `;
 
@@ -95,6 +101,20 @@ export const initDb = async () => {
       );
     } catch (e) {
       // Constraint likely already exists, ignore
+    }
+
+    // ── Phase 2: Rich Analytics Telemetry Columns ───────────────────────────
+    try {
+      await pool.query(`
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS country VARCHAR(10);
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS device_type VARCHAR(20);
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS browser VARCHAR(50);
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS os VARCHAR(50);
+        ALTER TABLE click_history ADD COLUMN IF NOT EXISTS referrer VARCHAR(255);
+      `);
+    } catch (e) {
+      // Columns likely already exist, ignore
     }
 
     // ── Phase 1: Composite Performance Indexes ────────────────────────────────
