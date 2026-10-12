@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { checkStatus } from '../services/api.js';
 import styles from './RecentUrls.module.css';
@@ -14,14 +14,80 @@ export default function RecentUrls({ items = [], onSelect, onClear, onDelete, on
   const [searchQuery, setSearchQuery] = useState('');
   const [statusMap, setStatusMap] = useState({}); // shortCode → { isAlive }
 
-  const filteredItems = items.filter(item => {
-    const query = searchQuery.toLowerCase();
-    const matchCode = item.shortCode?.toLowerCase().includes(query);
-    const matchUrl = item.originalUrl?.toLowerCase().includes(query);
-    const matchTitle = item.title?.toLowerCase().includes(query);
-    const matchTags = item.tags?.toLowerCase().includes(query);
-    return matchCode || matchUrl || matchTitle || matchTags;
-  });
+  // 1. Pre-index search corpus per item (memoized on items changes).
+  // Eliminates repeated lowercasing and field traversal on every keystroke.
+  const indexedItems = useMemo(() => {
+    return items.map((item) => {
+      const codeLower = (item.shortCode || '').toLowerCase();
+      const titleLower = (item.title || '').toLowerCase();
+      const tagsLower = (item.tags || '').toLowerCase();
+      const urlLower = (item.originalUrl || '').toLowerCase();
+      return {
+        item,
+        codeLower,
+        titleLower,
+        tagsLower,
+        urlLower,
+        fullCorpus: `${codeLower} ${titleLower} ${tagsLower} ${urlLower}`,
+      };
+    });
+  }, [items]);
+
+  // 2. High-performance multi-token search with fast O(1) reject and relevance ranking
+  const filteredItems = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) return items;
+
+    const tokens = trimmed.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return items;
+
+    const matches = [];
+
+    for (let i = 0; i < indexedItems.length; i++) {
+      const entry = indexedItems[i];
+      let score = 0;
+      let matchedAll = true;
+
+      for (let t = 0; t < tokens.length; t++) {
+        const token = tokens[t];
+
+        // Fast O(1) string check: if token isn't in full corpus, skip immediately
+        if (!entry.fullCorpus.includes(token)) {
+          matchedAll = false;
+          break;
+        }
+
+        // Weighted relevance scoring: prioritize alias prefix and exact matches
+        if (entry.codeLower === token) {
+          score += 100; // Exact alias match
+        } else if (entry.codeLower.startsWith(token)) {
+          score += 65;  // Alias prefix match (e.g. "git" -> "/github")
+        } else if (entry.codeLower.includes(token)) {
+          score += 45;  // Alias contains token
+        }
+
+        if (entry.titleLower.includes(token)) {
+          score += entry.titleLower.startsWith(token) ? 35 : 20;
+        }
+
+        if (entry.tagsLower.includes(token)) {
+          score += 30;
+        }
+
+        if (entry.urlLower.includes(token)) {
+          score += 10;
+        }
+      }
+
+      if (matchedAll) {
+        matches.push({ item: entry.item, score });
+      }
+    }
+
+    // Rank highest relevance score first
+    matches.sort((a, b) => b.score - a.score);
+    return matches.map((m) => m.item);
+  }, [indexedItems, searchQuery, items]);
 
   const displayItems = searchQuery.trim() === '' 
     ? items.slice(0, MAX_VISIBLE_LINKS) 
@@ -88,7 +154,12 @@ export default function RecentUrls({ items = [], onSelect, onClear, onDelete, on
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
           </svg>
           <span>{isSignedIn ? 'Your Links' : 'Recent Links'}</span>
-          <span className={styles.countBadge}>{displayItems.length}</span>
+          <span 
+            className={styles.countBadge}
+            title={searchQuery.trim() ? `${filteredItems.length} matching of ${items.length} total links` : `Total links created: ${items.length}`}
+          >
+            {searchQuery.trim() ? `${filteredItems.length}/${items.length}` : items.length}
+          </span>
         </div>
         <div className={styles.headerActions}>
           <div className={styles.searchWrapper}>
@@ -102,7 +173,24 @@ export default function RecentUrls({ items = [], onSelect, onClear, onDelete, on
               placeholder="Search by alias, title, tags..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSearchQuery('');
+              }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className={styles.searchClearBtn}
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            )}
           </div>
           <button className={styles.clearBtn} onClick={onClear} aria-label="Clear recent URLs">
             Clear all
