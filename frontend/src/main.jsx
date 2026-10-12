@@ -70,6 +70,40 @@ function Root() {
           background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
           boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
         },
+        userProfileRoot: {
+          width: '100% !important',
+          maxWidth: '100% !important',
+        },
+        userProfileCard: {
+          width: '100% !important',
+          maxWidth: '100% !important',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: isDark ? '0 20px 50px rgba(0, 0, 0, 0.5)' : '0 12px 32px rgba(0, 0, 0, 0.08)',
+          borderRadius: '1.25rem',
+        },
+        userProfileNavbar: {
+          background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+          borderRight: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+        },
+        userProfileNavbarButton: {
+          borderRadius: '0.65rem',
+        },
+        userProfileNavbarButton__active: {
+          background: 'rgba(99, 102, 241, 0.16) !important',
+          color: '#818cf8 !important',
+        },
+        userProfileNavbarFooter: {
+          display: 'none !important',
+        },
+        navbarFooter: {
+          display: 'none !important',
+        },
+        profileSection__footer: {
+          display: 'none !important',
+        },
+        badge: {
+          display: 'none !important',
+        },
       },
     };
   }, [theme]);

@@ -320,7 +320,7 @@
   align-items: center;
   width: 100%;
   margin-top: 2px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   animation: fadeInUp 0.4s var(--ease-out) both;
 }
 
@@ -330,45 +330,64 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  padding: 4px;
+  padding: 5px;
   gap: 4px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  position: relative;
 }
 
 .sliderBtn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
+  justify-content: center;
+  padding: 8px 22px;
   border-radius: var(--radius-full);
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-secondary);
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.2s ease;
+  position: relative;
   user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.sliderBtn:hover {
+.sliderBtn:hover:not(.sliderBtnActive) {
   color: var(--text-primary);
-  background: var(--bg-glass-hover);
 }
 
 .sliderBtnActive {
   color: #ffffff !important;
-  background: var(--grad-brand) !important;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
 }
 
-.sliderBtnIcon {
-  display: flex;
+.sliderPill {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background: var(--grad-brand);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45);
+  z-index: 1;
+}
+
+.sliderBtnContent {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+}
+
+.tabContentWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* ── Logged In Dashboard Hero Statement ────────────── */

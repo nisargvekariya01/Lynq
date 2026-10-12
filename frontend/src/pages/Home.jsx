@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SignInButton, UserButton, UserProfile } from '@clerk/clerk-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { dark } from '@clerk/themes';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
@@ -414,9 +415,9 @@ export default function Home({ theme, onToggleTheme, addToast }) {
             </div>
           </div>
         ) : (
-          /* ── Logged In Experience with Page Slider ───── */
+          /* ── Logged In Experience with Smooth Sliding Page Switcher ───── */
           <>
-            {/* ── Top Page Slider ─────────────────────── */}
+            {/* ── Top Page Slider with Smooth Pill Shift ── */}
             <div className={styles.sliderWrapper}>
               <div className={styles.pageSlider} role="tablist" aria-label="Dashboard views">
                 <button
@@ -426,13 +427,20 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                   className={`${styles.sliderBtn} ${activeTab === 'links' ? styles.sliderBtnActive : ''}`}
                   onClick={() => setActiveTab('links')}
                 >
-                  <span className={styles.sliderBtnIcon}>
+                  {activeTab === 'links' && (
+                    <motion.div
+                      layoutId="activeSliderPill"
+                      className={styles.sliderPill}
+                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className={styles.sliderBtnContent}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                     </svg>
+                    <span>Your links</span>
                   </span>
-                  <span>Your links</span>
                 </button>
 
                 <button
@@ -442,92 +450,116 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                   className={`${styles.sliderBtn} ${activeTab === 'settings' ? styles.sliderBtnActive : ''}`}
                   onClick={() => setActiveTab('settings')}
                 >
-                  <span className={styles.sliderBtnIcon}>
+                  {activeTab === 'settings' && (
+                    <motion.div
+                      layoutId="activeSliderPill"
+                      className={styles.sliderPill}
+                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className={styles.sliderBtnContent}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
+                    <span>User Setting</span>
                   </span>
-                  <span>User Setting</span>
                 </button>
               </div>
             </div>
 
-            {/* ── View Content based on activeTab ───────── */}
-            {activeTab === 'links' ? (
-              <>
-                {/* ── Short Statement Headline ─────────── */}
-                <div className={styles.dashboardHero}>
-                  <h2 className={styles.dashboardHeadline}>
-                    Shorten URLs in <span className={styles.headingGradient}>a few simple steps</span>
-                  </h2>
-                  <p className={styles.dashboardSubtext}>
-                    Create fast, trackable short links with real-time telemetry and custom options.
-                  </p>
-                </div>
-
-                {/* ── Logged In Link Shortening Form ───── */}
-                <div className={styles.inputSection} id="shorten-input-container">
-                  <UrlInput onShorten={handleShorten} isLoading={isLoading} />
-                </div>
-
-                {/* ── Bulk CSV Upload ─────────────────── */}
-                <div className={styles.inputSection}>
-                  <BulkUpload onAdded={handleBulkAdded} />
-                </div>
-
-                {/* ── Result Area ────────────────────── */}
-                {result && (
-                  <div className={styles.resultSection} id="result-section">
-                    <div className={styles.resultMain}>
-                      <ResultCard result={result} onCopy={handleCopy} />
-                      <Analytics data={result} />
-                    </div>
-                    <QRCodeCard url={result.shortUrl} />
+            {/* ── View Content with Smooth Shift Animation ── */}
+            <AnimatePresence mode="wait">
+              {activeTab === 'links' ? (
+                <motion.div
+                  key="tab-links"
+                  initial={{ opacity: 0, x: -18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -18 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className={styles.tabContentWrapper}
+                >
+                  {/* ── Short Statement Headline ─────────── */}
+                  <div className={styles.dashboardHero}>
+                    <h2 className={styles.dashboardHeadline}>
+                      Shorten URLs in <span className={styles.headingGradient}>a few simple steps</span>
+                    </h2>
+                    <p className={styles.dashboardSubtext}>
+                      Create fast, trackable short links with real-time telemetry and custom options.
+                    </p>
                   </div>
-                )}
 
-                {/* ── Recent URLs ────────────────────── */}
-                {recentUrls.length > 0 && (
-                  <div className={styles.recentSection}>
-                    <RecentUrls
-                      items={recentUrls}
-                      onSelect={handleSelectRecent}
-                      onClear={handleClearRecent}
-                      onDelete={handleDeleteRecent}
-                      onEdit={handleEditRecent}
-                    />
+                  {/* ── Logged In Link Shortening Form ───── */}
+                  <div className={styles.inputSection} id="shorten-input-container">
+                    <UrlInput onShorten={handleShorten} isLoading={isLoading} />
                   </div>
-                )}
-              </>
-            ) : (
-              /* ── User Setting Tab Content ─────────── */
-              <div className={styles.settingsSection}>
-                <div className={styles.settingsHero}>
-                  <h2 className={styles.settingsHeadline}>
-                    User <span className={styles.headingGradient}>Setting</span>
-                  </h2>
-                  <p className={styles.settingsSubtext}>
-                    Manage your account profile, security credentials, and authentication preferences.
-                  </p>
-                </div>
 
-                <div className={styles.userProfileWrapper}>
-                  {hasClerk ? (
-                    <UserProfile
-                      routing="hash"
-                      appearance={{
-                        baseTheme: theme === 'dark' ? dark : undefined,
-                      }}
-                    />
-                  ) : (
-                    <div className={styles.mockSettingsCard}>
-                      <p>Account settings are managed via your authentication provider.</p>
+                  {/* ── Bulk CSV Upload ─────────────────── */}
+                  <div className={styles.inputSection}>
+                    <BulkUpload onAdded={handleBulkAdded} />
+                  </div>
+
+                  {/* ── Result Area ────────────────────── */}
+                  {result && (
+                    <div className={styles.resultSection} id="result-section">
+                      <div className={styles.resultMain}>
+                        <ResultCard result={result} onCopy={handleCopy} />
+                        <Analytics data={result} />
+                      </div>
+                      <QRCodeCard url={result.shortUrl} />
                     </div>
                   )}
-                </div>
-              </div>
-            )}
+
+                  {/* ── Recent URLs ────────────────────── */}
+                  {recentUrls.length > 0 && (
+                    <div className={styles.recentSection}>
+                      <RecentUrls
+                        items={recentUrls}
+                        onSelect={handleSelectRecent}
+                        onClear={handleClearRecent}
+                        onDelete={handleDeleteRecent}
+                        onEdit={handleEditRecent}
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="tab-settings"
+                  initial={{ opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 18 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className={styles.tabContentWrapper}
+                >
+                  <div className={styles.settingsSection}>
+                    <div className={styles.settingsHero}>
+                      <h2 className={styles.settingsHeadline}>
+                        User <span className={styles.headingGradient}>Setting</span>
+                      </h2>
+                      <p className={styles.settingsSubtext}>
+                        Manage your account profile, security credentials, and authentication preferences.
+                      </p>
+                    </div>
+
+                    <div className={styles.userProfileWrapper}>
+                      {hasClerk ? (
+                        <UserProfile
+                          routing="hash"
+                          appearance={{
+                            baseTheme: theme === 'dark' ? dark : undefined,
+                          }}
+                        />
+                      ) : (
+                        <div className={styles.mockSettingsCard}>
+                          <p>Account settings are managed via your authentication provider.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
 
