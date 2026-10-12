@@ -247,14 +247,42 @@ input[type="number"] {
 }
 
 /* ── Hide Clerk Watermark, Logo & Empty Footer ───────────── */
-.cl-footer {
+.cl-footer,
+.cl-footerPages,
+.cl-userButtonPopoverFooter,
+.cl-userButtonPopoverFooterPages,
+.cl-userProfile-root .cl-footer,
+.cl-userProfile-root .cl-footerPages,
+[class*="userButtonPopoverFooter"],
+[class*="cl-footer"] {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;
+  max-height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
-  background: transparent !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── Hide Manage Account from UserButton popover ────────── */
+.cl-userButtonPopoverActionButton__manageAccount,
+.cl-userButtonPopoverActionButton[data-localization-key*="manageAccount"],
+.cl-userButtonPopoverActionButton:has([data-localization-key*="manageAccount"]),
+.cl-userButtonPopoverActions > .cl-userButtonPopoverActionButton:first-of-type:not(:only-of-type),
+.cl-userButtonPopoverActions > button:first-of-type:not(:only-of-type) {
+  display: none !important;
+}
+
+.cl-userButtonPopoverCard {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+.cl-userButtonPopoverMain {
+  padding-bottom: 6px !important;
 }
 
 .cl-modalContent {
@@ -271,4 +299,17 @@ input[type="number"] {
   border-radius: 20px !important;
   overflow: hidden !important;
 }
+
+/* ── Clerk UserProfile Root Styling ─────────────────────── */
+.cl-userProfile-root {
+  width: 100% !important;
+  max-width: 920px !important;
+}
+
+.cl-userProfile-root .cl-card {
+  width: 100% !important;
+  max-width: 920px !important;
+  margin: 0 auto !important;
+}
+
 

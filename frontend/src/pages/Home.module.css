@@ -313,6 +313,140 @@
   font-weight: 400;
 }
 
+/* ── Dashboard Page Slider ─────────────────────────── */
+.sliderWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  animation: fadeInUp 0.4s var(--ease-out) both;
+}
+
+.pageSlider {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.sliderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.sliderBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-glass-hover);
+}
+
+.sliderBtnActive {
+  color: #ffffff !important;
+  background: var(--grad-brand) !important;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+}
+
+.sliderBtnIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Logged In Dashboard Hero Statement ────────────── */
+.dashboardHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  animation: fadeInUp 0.4s var(--ease-out) forwards;
+  margin-bottom: 2px;
+}
+
+.dashboardHeadline {
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.dashboardSubtext {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+/* ── User Setting View ─────────────────────────────── */
+.settingsSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+  animation: fadeIn 0.35s ease forwards;
+}
+
+.settingsHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.settingsHeadline {
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.settingsSubtext {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+.userProfileWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mockSettingsCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+  max-width: 600px;
+  width: 100%;
+}
+
 /* ── Input Section ─────────────────────────────────── */
 .inputSection {
   animation: fadeInUp 0.6s 0.1s var(--ease-out) both;

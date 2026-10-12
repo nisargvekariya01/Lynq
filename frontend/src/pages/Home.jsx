@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignInButton, UserButton, UserProfile } from '@clerk/clerk-react';
 import { dark } from '@clerk/themes';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
@@ -25,6 +25,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('links'); // 'links' | 'settings'
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
 
@@ -127,6 +128,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const codeParam = searchParams.get('code');
   useEffect(() => {
     if (codeParam) {
+      setActiveTab('links');
       handleSelectRecent({ shortCode: codeParam });
       setSearchParams({}, { replace: true });
       setTimeout(() => {
@@ -138,6 +140,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   useEffect(() => {
     const handlePaletteSelect = (e) => {
       if (e.detail) {
+        setActiveTab('links');
         handleSelectRecent(e.detail);
         setTimeout(() => {
           document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -149,12 +152,24 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       setShowPortfolio(true);
     };
 
+    const handleOpenSettings = () => {
+      setActiveTab('settings');
+    };
+
+    const handleOpenLinks = () => {
+      setActiveTab('links');
+    };
+
     window.addEventListener('lynq-select-link', handlePaletteSelect);
     window.addEventListener('lynq-open-portfolio', handlePortfolioOpen);
+    window.addEventListener('lynq-open-settings', handleOpenSettings);
+    window.addEventListener('lynq-open-links', handleOpenLinks);
 
     return () => {
       window.removeEventListener('lynq-select-link', handlePaletteSelect);
       window.removeEventListener('lynq-open-portfolio', handlePortfolioOpen);
+      window.removeEventListener('lynq-open-settings', handleOpenSettings);
+      window.removeEventListener('lynq-open-links', handleOpenLinks);
     };
   }, [handleSelectRecent]);
 
@@ -399,44 +414,154 @@ export default function Home({ theme, onToggleTheme, addToast }) {
             </div>
           </div>
         ) : (
-          /* ── Logged In Workspace (Direct Clean Input) ── */
-          <div className={styles.inputSection} id="shorten-input-container">
-            <UrlInput onShorten={handleShorten} isLoading={isLoading} />
-          </div>
-        )}
+          /* ── Logged In Experience with Page Slider ───── */
+          <>
+            {/* ── Top Page Slider ─────────────────────── */}
+            <div className={styles.sliderWrapper}>
+              <div className={styles.pageSlider} role="tablist" aria-label="Dashboard views">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'links'}
+                  className={`${styles.sliderBtn} ${activeTab === 'links' ? styles.sliderBtnActive : ''}`}
+                  onClick={() => setActiveTab('links')}
+                >
+                  <span className={styles.sliderBtnIcon}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                  </span>
+                  <span>Your links</span>
+                </button>
 
-        {/* ── Bulk CSV Upload ─────────────────────────── */}
-        <div className={styles.inputSection}>
-          <BulkUpload onAdded={handleBulkAdded} />
-        </div>
-
-        {/* ── Result Area ────────────────────────────── */}
-        {result && (
-          <div className={styles.resultSection} id="result-section">
-            <div className={styles.resultMain}>
-              <ResultCard result={result} onCopy={handleCopy} />
-              <Analytics data={result} />
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'settings'}
+                  className={`${styles.sliderBtn} ${activeTab === 'settings' ? styles.sliderBtnActive : ''}`}
+                  onClick={() => setActiveTab('settings')}
+                >
+                  <span className={styles.sliderBtnIcon}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </span>
+                  <span>User Setting</span>
+                </button>
+              </div>
             </div>
-            <QRCodeCard url={result.shortUrl} />
-          </div>
+
+            {/* ── View Content based on activeTab ───────── */}
+            {activeTab === 'links' ? (
+              <>
+                {/* ── Short Statement Headline ─────────── */}
+                <div className={styles.dashboardHero}>
+                  <h2 className={styles.dashboardHeadline}>
+                    Shorten URLs in <span className={styles.headingGradient}>a few simple steps</span>
+                  </h2>
+                  <p className={styles.dashboardSubtext}>
+                    Create fast, trackable short links with real-time telemetry and custom options.
+                  </p>
+                </div>
+
+                {/* ── Logged In Link Shortening Form ───── */}
+                <div className={styles.inputSection} id="shorten-input-container">
+                  <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+                </div>
+
+                {/* ── Bulk CSV Upload ─────────────────── */}
+                <div className={styles.inputSection}>
+                  <BulkUpload onAdded={handleBulkAdded} />
+                </div>
+
+                {/* ── Result Area ────────────────────── */}
+                {result && (
+                  <div className={styles.resultSection} id="result-section">
+                    <div className={styles.resultMain}>
+                      <ResultCard result={result} onCopy={handleCopy} />
+                      <Analytics data={result} />
+                    </div>
+                    <QRCodeCard url={result.shortUrl} />
+                  </div>
+                )}
+
+                {/* ── Recent URLs ────────────────────── */}
+                {recentUrls.length > 0 && (
+                  <div className={styles.recentSection}>
+                    <RecentUrls
+                      items={recentUrls}
+                      onSelect={handleSelectRecent}
+                      onClear={handleClearRecent}
+                      onDelete={handleDeleteRecent}
+                      onEdit={handleEditRecent}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              /* ── User Setting Tab Content ─────────── */
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsHero}>
+                  <h2 className={styles.settingsHeadline}>
+                    User <span className={styles.headingGradient}>Setting</span>
+                  </h2>
+                  <p className={styles.settingsSubtext}>
+                    Manage your account profile, security credentials, and authentication preferences.
+                  </p>
+                </div>
+
+                <div className={styles.userProfileWrapper}>
+                  {hasClerk ? (
+                    <UserProfile
+                      routing="hash"
+                      appearance={{
+                        baseTheme: theme === 'dark' ? dark : undefined,
+                      }}
+                    />
+                  ) : (
+                    <div className={styles.mockSettingsCard}>
+                      <p>Account settings are managed via your authentication provider.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* ── Recent URLs ────────────────────────────── */}
-        {recentUrls.length > 0 && (
-          <div className={styles.recentSection}>
-            <RecentUrls
-              items={recentUrls}
-              onSelect={handleSelectRecent}
-              onClear={handleClearRecent}
-              onDelete={handleDeleteRecent}
-              onEdit={handleEditRecent}
-            />
-          </div>
-        )}
-
-        {/* ── Rich Landing Page Content (when !isSignedIn) ─── */}
+        {/* ── Guest Only: Bulk Upload, Results, Recent & Landing ── */}
         {!isSignedIn && (
-          <LandingSections hasClerk={hasClerk} onScrollToInput={scrollToInput} />
+          <>
+            <div className={styles.inputSection}>
+              <BulkUpload onAdded={handleBulkAdded} />
+            </div>
+
+            {result && (
+              <div className={styles.resultSection} id="result-section">
+                <div className={styles.resultMain}>
+                  <ResultCard result={result} onCopy={handleCopy} />
+                  <Analytics data={result} />
+                </div>
+                <QRCodeCard url={result.shortUrl} />
+              </div>
+            )}
+
+            {recentUrls.length > 0 && (
+              <div className={styles.recentSection}>
+                <RecentUrls
+                  items={recentUrls}
+                  onSelect={handleSelectRecent}
+                  onClear={handleClearRecent}
+                  onDelete={handleDeleteRecent}
+                  onEdit={handleEditRecent}
+                />
+              </div>
+            )}
+
+            <LandingSections hasClerk={hasClerk} onScrollToInput={scrollToInput} />
+          </>
         )}
       </main>
 

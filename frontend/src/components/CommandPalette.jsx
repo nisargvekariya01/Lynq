@@ -85,6 +85,28 @@ export default function CommandPalette({
           onClose();
         },
       },
+      {
+        id: 'cmd-user-setting',
+        type: 'command',
+        title: 'Open User Setting',
+        icon: '⚙️',
+        shortcut: 'U',
+        action: () => {
+          window.dispatchEvent(new CustomEvent('lynq-open-settings'));
+          onClose();
+        },
+      },
+      {
+        id: 'cmd-your-links',
+        type: 'command',
+        title: 'Go to Your Links',
+        icon: '🔗',
+        shortcut: 'L',
+        action: () => {
+          window.dispatchEvent(new CustomEvent('lynq-open-links'));
+          onClose();
+        },
+      },
     ];
 
     if (currentActiveCode && onExportCsv) {

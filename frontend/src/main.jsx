@@ -58,7 +58,10 @@ function Root() {
           background: isDark ? '#12121f' : '#ffffff',
         },
         userButtonPopoverFooter: {
-          background: isDark ? '#0d0d17' : '#f8fafc',
+          display: 'none !important',
+        },
+        userButtonPopoverActionButton__manageAccount: {
+          display: 'none !important',
         },
         socialButtonsBlockButton: {
           border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.1)',
