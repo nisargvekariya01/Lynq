@@ -27,6 +27,16 @@
   letter-spacing: 0.1em;
 }
 
+.countBadge {
+  background: rgba(99, 102, 241, 0.18);
+  color: #818cf8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  margin-left: 2px;
+}
+
 .headerActions {
   display: flex;
   align-items: center;

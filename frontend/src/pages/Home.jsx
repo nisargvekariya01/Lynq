@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SignInButton, UserButton, UserProfile } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { dark } from '@clerk/themes';
-import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl } from '../services/api.js';
+import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl, getUserLinks } from '../services/api.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { useLynqAuth } from '../context/AuthContext.jsx';
 
@@ -14,7 +14,6 @@ import Analytics from '../components/Analytics.jsx';
 import RecentUrls from '../components/RecentUrls.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import BulkUpload from '../components/BulkUpload.jsx';
-import UserPortfolio from '../components/UserPortfolio.jsx';
 import LandingSections, { LandingFooter } from '../components/LandingSections.jsx';
 
 import styles from './Home.module.css';
@@ -27,8 +26,35 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('links'); // 'links' | 'settings'
-  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [userLinks, setUserLinks] = useState([]);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
+
+  // Load user links from backend when signed in
+  useEffect(() => {
+    if (isSignedIn) {
+      getUserLinks()
+        .then((res) => {
+          if (res?.success && Array.isArray(res.links)) {
+            setUserLinks(res.links);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load user links:', err);
+        });
+    } else {
+      setUserLinks([]);
+    }
+  }, [isSignedIn]);
+
+  // Unified list of links (signed in cloud links + any pending guest links)
+  const allLinks = useMemo(() => {
+    if (!isSignedIn) {
+      return recentUrls;
+    }
+    const existingCodes = new Set(userLinks.map((l) => l.shortCode));
+    const extraRecent = recentUrls.filter((r) => !existingCodes.has(r.shortCode));
+    return [...extraRecent, ...userLinks];
+  }, [isSignedIn, userLinks, recentUrls]);
 
   const scrollToInput = useCallback(() => {
     const el = document.getElementById('shorten-input-container');
@@ -47,22 +73,26 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       const data = await apiShorten(url, customAlias, password, expiresInDays, maxClicks, title, tags, routingRules);
       setResult(data);
 
-      // Persist to recent URLs (deduplicate by shortCode)
-      setRecentUrls((prev) => {
-        const filtered = prev.filter((r) => r.shortCode !== data.shortCode);
-        const existingItem = prev.find(p => p.shortCode === data.shortCode);
-        return [
-          { 
-            shortCode: data.shortCode, 
-            shortUrl: data.shortUrl, 
-            originalUrl: data.originalUrl,
-            editToken: data.editToken || existingItem?.editToken, // Preserve if we already own it
-            title: data.title,
-            tags: data.tags,
-          },
-          ...filtered,
-        ].slice(0, MAX_RECENT_STORAGE);
-      });
+      const newLinkItem = { 
+        shortCode: data.shortCode, 
+        shortUrl: data.shortUrl, 
+        originalUrl: data.originalUrl,
+        editToken: data.editToken,
+        title: data.title,
+        tags: data.tags,
+      };
+
+      // Optimistically update both states instantly
+      if (isSignedIn) {
+        setUserLinks((prev) => [
+          newLinkItem,
+          ...prev.filter((r) => r.shortCode !== data.shortCode),
+        ]);
+      }
+      setRecentUrls((prev) => [
+        newLinkItem,
+        ...prev.filter((r) => r.shortCode !== data.shortCode),
+      ].slice(0, MAX_RECENT_STORAGE));
 
       addToast(
         data.isExisting
@@ -82,29 +112,34 @@ export default function Home({ theme, onToggleTheme, addToast }) {
     } finally {
       setIsLoading(false);
     }
-  }, [addToast, setRecentUrls]);
+  }, [isSignedIn, addToast, setRecentUrls]);
 
   const handleBulkAdded = useCallback((successfulResults) => {
-    setRecentUrls((prev) => {
-      const newItems = successfulResults.map(data => {
-        const existingItem = prev.find(p => p.shortCode === data.shortCode);
-        return {
-          shortCode: data.shortCode,
-          shortUrl: data.shortUrl,
-          originalUrl: data.originalUrl,
-          editToken: data.editToken || existingItem?.editToken, // Preserve if we already own it
-          title: data.title,
-          tags: data.tags,
-        };
-      }).reverse(); // latest on top
+    const newItems = successfulResults.map(data => ({
+      shortCode: data.shortCode,
+      shortUrl: data.shortUrl,
+      originalUrl: data.originalUrl,
+      editToken: data.editToken,
+      title: data.title,
+      tags: data.tags,
+    })).reverse();
 
+    if (isSignedIn) {
+      setUserLinks((prev) => {
+        const existingCodes = new Set(newItems.map(item => item.shortCode));
+        const filteredPrev = prev.filter(r => !existingCodes.has(r.shortCode));
+        return [...newItems, ...filteredPrev];
+      });
+    }
+
+    setRecentUrls((prev) => {
       const existingCodes = new Set(newItems.map(item => item.shortCode));
       const filteredPrev = prev.filter(r => !existingCodes.has(r.shortCode));
-
       return [...newItems, ...filteredPrev].slice(0, MAX_RECENT_STORAGE);
     });
-    addToast(`Added ${successfulResults.length} link(s) to recent list`, 'success');
-  }, [addToast, setRecentUrls]);
+
+    addToast(`Added ${successfulResults.length} link(s) to list`, 'success');
+  }, [isSignedIn, addToast, setRecentUrls]);
 
   const handleSelectRecent = useCallback(async (item) => {
     // Set immediate cached state
@@ -150,7 +185,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
     };
 
     const handlePortfolioOpen = () => {
-      setShowPortfolio(true);
+      document.getElementById('recent-links-container')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     const handleOpenSettings = () => {
@@ -196,61 +231,70 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   }, [result?.shortCode]);
 
   const handleClearRecent = useCallback(async () => {
-    // Collect deletion promises for all items with an editToken
-    const deletePromises = recentUrls
+    const deletePromises = allLinks
       .filter((item) => item.editToken)
       .map((item) => deleteUrl(item.shortCode, item.editToken));
 
-    // Clear local UI instantly
+    // Instant local UI clear
+    setUserLinks([]);
     setRecentUrls([]);
     setResult(null);
 
     if (deletePromises.length > 0) {
       try {
         await Promise.allSettled(deletePromises);
-        addToast('All recent URLs deleted permanently.', 'success');
+        addToast('All links deleted permanently.', 'success', 2000);
       } catch (err) {
         console.error('Failed to clear all URLs from backend', err);
       }
     }
-  }, [recentUrls, setRecentUrls, addToast]);
+  }, [allLinks, setRecentUrls, addToast]);
 
   const handleDeleteRecent = useCallback(async (shortCode) => {
-    // Find the item to get its edit token
-    const item = recentUrls.find(i => i.shortCode === shortCode);
+    const item = allLinks.find((i) => i.shortCode === shortCode);
     
-    // First, remove it locally for snappy UI
+    // FAST OPTIMISTIC UI: Instantly remove locally in 0ms
+    setUserLinks((prev) => prev.filter((i) => i.shortCode !== shortCode));
     setRecentUrls((prev) => prev.filter((i) => i.shortCode !== shortCode));
-    
-    // Clear result if it's currently open
     setResult((prev) => prev?.shortCode === shortCode ? null : prev);
 
-    if (item && item.editToken) {
+    // Background delete execution
+    if (item?.editToken) {
       try {
         await deleteUrl(shortCode, item.editToken);
-        addToast('URL deleted permanently.', 'success');
+        addToast('Link deleted permanently.', 'success', 2000);
       } catch (err) {
         console.error('Failed to delete URL from backend', err);
-        // It failed to delete remotely, but we still dropped it locally.
+      }
+    } else if (isSignedIn) {
+      try {
+        await deleteUrl(shortCode, null);
+        addToast('Link deleted permanently.', 'success', 2000);
+      } catch (err) {
+        console.error('Failed to delete URL from backend', err);
       }
     }
-  }, [recentUrls, setRecentUrls, addToast]);
+  }, [allLinks, isSignedIn, setRecentUrls, addToast]);
 
   const handleEditRecent = useCallback(async (shortCode, newUrl, editToken) => {
+    // Fast optimistic UI update
+    setUserLinks((prev) => prev.map((item) => 
+      item.shortCode === shortCode ? { ...item, originalUrl: newUrl } : item
+    ));
+    setRecentUrls((prev) => prev.map((item) => 
+      item.shortCode === shortCode ? { ...item, originalUrl: newUrl } : item
+    ));
+    
+    setResult((prev) => {
+      if (prev?.shortCode === shortCode) {
+        return { ...prev, originalUrl: newUrl };
+      }
+      return prev;
+    });
+
     try {
       await editUrl(shortCode, newUrl, editToken);
-      setRecentUrls((prev) => prev.map((item) => 
-        item.shortCode === shortCode ? { ...item, originalUrl: newUrl } : item
-      ));
-      addToast('URL updated successfully!', 'success');
-      
-      // Update result section if currently viewing the edited link
-      setResult((prev) => {
-        if (prev?.shortCode === shortCode) {
-          return { ...prev, originalUrl: newUrl };
-        }
-        return prev;
-      });
+      addToast('URL updated successfully!', 'success', 2000);
       return true;
     } catch (err) {
       addToast(err?.response?.data?.error || 'Failed to edit URL.', 'error');
@@ -289,26 +333,12 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           <div className={styles.headerRight}>
             {hasClerk && (
               isSignedIn ? (
-                <>
-                  <button
-                    type="button"
-                    className={styles.myLinksBtn}
-                    onClick={() => setShowPortfolio(true)}
-                    title="View My Cloud Links & Portfolio"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
-                    <span>My Links</span>
-                  </button>
-                  <UserButton
-                    afterSignOutUrl="/"
-                    appearance={{
-                      baseTheme: theme === 'dark' ? dark : undefined,
-                    }}
-                  />
-                </>
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    baseTheme: theme === 'dark' ? dark : undefined,
+                  }}
+                />
               ) : (
                 <SignInButton mode="modal" oauthFlow="popup">
                   <button type="button" className={styles.signInBtn}>
@@ -499,6 +529,20 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                     <BulkUpload onAdded={handleBulkAdded} />
                   </div>
 
+                  {/* ── Links Section (Directly below Bulk CSV Upload, max 5-6 links) ── */}
+                  {allLinks.length > 0 && (
+                    <div className={styles.recentSection} id="recent-links-container">
+                      <RecentUrls
+                        items={allLinks}
+                        onSelect={handleSelectRecent}
+                        onClear={handleClearRecent}
+                        onDelete={handleDeleteRecent}
+                        onEdit={handleEditRecent}
+                        isSignedIn={isSignedIn}
+                      />
+                    </div>
+                  )}
+
                   {/* ── Result Area ────────────────────── */}
                   {result && (
                     <div className={styles.resultSection} id="result-section">
@@ -507,19 +551,6 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                         <Analytics data={result} />
                       </div>
                       <QRCodeCard url={result.shortUrl} />
-                    </div>
-                  )}
-
-                  {/* ── Recent URLs ────────────────────── */}
-                  {recentUrls.length > 0 && (
-                    <div className={styles.recentSection}>
-                      <RecentUrls
-                        items={recentUrls}
-                        onSelect={handleSelectRecent}
-                        onClear={handleClearRecent}
-                        onDelete={handleDeleteRecent}
-                        onEdit={handleEditRecent}
-                      />
                     </div>
                   )}
                 </motion.div>
@@ -563,12 +594,25 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           </>
         )}
 
-        {/* ── Guest Only: Bulk Upload, Results, Recent & Landing ── */}
+        {/* ── Guest Only: Bulk Upload, Links, Results & Landing ── */}
         {!isSignedIn && (
           <>
             <div className={styles.inputSection}>
               <BulkUpload onAdded={handleBulkAdded} />
             </div>
+
+            {allLinks.length > 0 && (
+              <div className={styles.recentSection} id="recent-links-container">
+                <RecentUrls
+                  items={allLinks}
+                  onSelect={handleSelectRecent}
+                  onClear={handleClearRecent}
+                  onDelete={handleDeleteRecent}
+                  onEdit={handleEditRecent}
+                  isSignedIn={false}
+                />
+              </div>
+            )}
 
             {result && (
               <div className={styles.resultSection} id="result-section">
@@ -577,18 +621,6 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                   <Analytics data={result} />
                 </div>
                 <QRCodeCard url={result.shortUrl} />
-              </div>
-            )}
-
-            {recentUrls.length > 0 && (
-              <div className={styles.recentSection}>
-                <RecentUrls
-                  items={recentUrls}
-                  onSelect={handleSelectRecent}
-                  onClear={handleClearRecent}
-                  onDelete={handleDeleteRecent}
-                  onEdit={handleEditRecent}
-                />
               </div>
             )}
 
@@ -615,14 +647,6 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           </div>
         </footer>
       )}
-
-      {/* ── User Portfolio Modal ──────────────────────── */}
-      <UserPortfolio
-        isOpen={showPortfolio}
-        onClose={() => setShowPortfolio(false)}
-        onSelectLink={handleSelectRecent}
-        addToast={addToast}
-      />
     </div>
   );
 }

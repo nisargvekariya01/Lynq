@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { checkStatus } from '../services/api.js';
 import styles from './RecentUrls.module.css';
 
+const MAX_VISIBLE_LINKS = 6;
+
 /**
- * RecentUrls — shows last 5 shortened URLs from LocalStorage.
+ * RecentUrls — shows up to 5-6 shortened URLs with fast auto-adjusting list.
  */
-export default function RecentUrls({ items, onSelect, onClear, onDelete, onEdit }) {
+export default function RecentUrls({ items = [], onSelect, onClear, onDelete, onEdit, isSignedIn = false }) {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,31 +23,31 @@ export default function RecentUrls({ items, onSelect, onClear, onDelete, onEdit 
     return matchCode || matchUrl || matchTitle || matchTags;
   });
 
-  const displayItems = searchQuery.trim() === '' ? items.slice(0, 5) : filteredItems.slice(0, 20);
+  const displayItems = searchQuery.trim() === '' 
+    ? items.slice(0, MAX_VISIBLE_LINKS) 
+    : filteredItems.slice(0, MAX_VISIBLE_LINKS);
 
-  // Check status for displayed items on mount or when they change
+  // Check status for displayed items in parallel (fast, non-blocking)
   useEffect(() => {
     if (!displayItems || displayItems.length === 0) return;
     let cancelled = false;
 
-    const checkAll = async () => {
-      for (const item of displayItems) {
-        if (cancelled) break;
-        // Don't recheck if we already have it
-        if (item.shortCode in statusMap) continue;
+    const uncached = displayItems.filter(item => !(item.shortCode in statusMap));
+    if (uncached.length === 0) return;
 
+    Promise.allSettled(
+      uncached.map(async (item) => {
         try {
           const result = await checkStatus(item.shortCode);
-          if (!cancelled) {
+          if (!cancelled && result) {
             setStatusMap((prev) => ({ ...prev, [item.shortCode]: result.isAlive }));
           }
         } catch {
           // silently skip if check fails
         }
-      }
-    };
+      })
+    );
 
-    checkAll();
     return () => { cancelled = true; };
   }, [displayItems.map(i => i.shortCode).join(',')]); // eslint-disable-line
 
@@ -76,15 +79,16 @@ export default function RecentUrls({ items, onSelect, onClear, onDelete, onEdit 
     }
   };
 
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.title}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
           </svg>
-          Recent
+          <span>{isSignedIn ? 'Your Links' : 'Recent Links'}</span>
+          <span className={styles.countBadge}>{displayItems.length}</span>
         </div>
         <div className={styles.headerActions}>
           <div className={styles.searchWrapper}>
@@ -110,13 +114,22 @@ export default function RecentUrls({ items, onSelect, onClear, onDelete, onEdit 
         {displayItems.length === 0 ? (
           <li className={styles.emptyState}>No links found matching "{searchQuery}"</li>
         ) : (
-          displayItems.map((item, i) => {
-            const isEditing = editingId === item.shortCode;
-            const hasTags = item.tags && item.tags.trim().length > 0;
-            const tagArray = hasTags ? item.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+          <AnimatePresence initial={false} mode="popLayout">
+            {displayItems.map((item) => {
+              const isEditing = editingId === item.shortCode;
+              const hasTags = item.tags && item.tags.trim().length > 0;
+              const tagArray = hasTags ? item.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-          return (
-            <li key={item.shortCode + i} className={styles.item}>
+              return (
+                <motion.li
+                  key={item.shortCode}
+                  layout
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className={styles.item}
+                >
               <div className={styles.itemWrapper}>
                 
                 {isEditing ? (
@@ -213,10 +226,12 @@ export default function RecentUrls({ items, onSelect, onClear, onDelete, onEdit 
                 )}
 
               </div>
-            </li>
+            </motion.li>
           );
-        }))}
-      </ul>
+        })}
+      </AnimatePresence>
+    )}
+  </ul>
     </div>
   );
 }
