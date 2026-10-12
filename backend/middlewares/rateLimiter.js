@@ -40,6 +40,7 @@ export const createLimiters = () => {
     max: isLoadTest ? 100_000 : 60,
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: true,
     skip: (req, res) => process.env.LOAD_TEST_MODE === "true",
     keyGenerator: generateDeviceKey,
     store: makeRedisStore("rl_api:"),
@@ -58,6 +59,7 @@ export const createLimiters = () => {
     max: isLoadTest ? 100_000 : 10,
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: true,
     keyGenerator: generateDeviceKey,
     store: makeRedisStore("rl_shorten:"),
     message: {
@@ -76,6 +78,7 @@ export const createLimiters = () => {
     max: isLoadTest ? 100_000 : 1,
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: true,
     keyGenerator: generateDeviceKey,
     store: makeRedisStore("rl_bulk:"),
     message: {

@@ -41,19 +41,20 @@ const retryCounters = new Map();
  * Guard flag to prevent overlapping worker executions when a slow DB
  * transaction spans more than one INTERVAL_MS tick.
  */
-let isProcessing = false;
-
 export const startAnalyticsWorker = () => {
   console.log("👷 v2 Analytics Worker started. Processing queue every 5s...");
 
-  setInterval(async () => {
-    if (!redisClient.isOpen) {
+  let isProcessing = false;
+
+  const processBatch = async () => {
+    // Only process when Redis is connected and ready (avoids ECONNRESET during reconnects)
+    if (!redisClient.isReady) {
+      setTimeout(processBatch, 2000);
       return;
     }
 
-    // Phase 1 (Task 1.3): Skip tick if the previous batch is still in-flight.
     if (isProcessing) {
-      console.warn("⚠️  Analytics worker: previous batch still running, skipping tick.");
+      setTimeout(processBatch, INTERVAL_MS);
       return;
     }
 
@@ -63,7 +64,6 @@ export const startAnalyticsWorker = () => {
     try {
       const queueLen = await redisClient.lLen("analytics_queue");
       if (queueLen === 0) {
-        isProcessing = false;
         return;
       }
 
@@ -272,11 +272,13 @@ export const startAnalyticsWorker = () => {
       // transaction, push them back so no analytics data is silently lost.
       if (rawItems && rawItems.length > 0) {
         try {
-          await redisClient.lPush("analytics_queue", rawItems);
-          console.error(
-            `❌ Analytics worker outer error — re-queued ${rawItems.length} events:`,
-            err.message,
-          );
+          if (redisClient.isReady) {
+            await redisClient.lPush("analytics_queue", rawItems);
+            console.error(
+              `❌ Analytics worker outer error — re-queued ${rawItems.length} events:`,
+              err.message,
+            );
+          }
         } catch (pushErr) {
           console.error(
             "❌ Failed to re-queue analytics events after outer error:",
@@ -284,11 +286,18 @@ export const startAnalyticsWorker = () => {
           );
         }
       } else {
-        console.error("❌ Analytics worker error:", err.message);
+        if (err.code === "ECONNRESET" || err.message?.includes("ECONNRESET")) {
+          console.warn("⚠️ Analytics worker: Redis reconnecting, will retry next tick.");
+        } else {
+          console.error("❌ Analytics worker error:", err.message);
+        }
       }
     } finally {
-      // Always release the processing lock, even on unexpected throws.
       isProcessing = false;
+      setTimeout(processBatch, INTERVAL_MS);
     }
-  }, INTERVAL_MS);
+  };
+
+  // Start initial worker tick
+  setTimeout(processBatch, INTERVAL_MS);
 };

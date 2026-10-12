@@ -7,25 +7,50 @@ import env from "./env.js";
 const client = createClient({
   username: env.redis.username,
   password: env.redis.password,
+  pingInterval: 5000, // Keep connection alive on Redis Cloud, prevents ECONNRESET
   socket: {
     host: env.redis.host,
     port: env.redis.port,
     tls: false,
+    keepAlive: 5000, // Enable TCP keep-alive probes
+    noDelay: true,
+    connectTimeout: 10000,
     reconnectStrategy: (retries) => {
-      if (retries > 5) {
-        console.error("❌ Redis: Too many reconnect attempts, giving up.");
-        return new Error("Redis reconnect limit reached");
-      }
-      return Math.min(retries * 200, 2000); // exponential backoff
+      // Exponential backoff capped at 3000ms; keeps reconnecting on transient cloud drops
+      return Math.min(retries * 150, 3000);
     },
   },
 });
 
 client.on("connect", () => console.log("✅ Redis: Connecting..."));
-client.on("ready", () => console.log("✅ Redis: Connected and ready"));
-client.on("error", (err) => console.error("❌ Redis Error:", err.message));
+client.on("ready", () => {
+  console.log("✅ Redis: Connected and ready");
+  if (!client._heartbeatTimer) {
+    client._heartbeatTimer = setInterval(async () => {
+      try {
+        if (client.isReady) {
+          await client.ping();
+        }
+      } catch {
+        // Handled by auto-reconnect
+      }
+    }, 10000);
+  }
+});
+client.on("error", (err) => {
+  if (err.code === "ECONNRESET" || err.message?.includes("ECONNRESET")) {
+    return; // Reconnecting automatically, silence noisy log
+  }
+  console.error("❌ Redis Error:", err.message);
+});
 client.on("reconnecting", () => console.log("🔄 Redis: Reconnecting..."));
-client.on("end", () => console.log("🔌 Redis: Connection closed"));
+client.on("end", () => {
+  if (client._heartbeatTimer) {
+    clearInterval(client._heartbeatTimer);
+    client._heartbeatTimer = null;
+  }
+  console.log("🔌 Redis: Connection closed");
+});
 
 /**
  * Connect to Redis — call once at server startup.
