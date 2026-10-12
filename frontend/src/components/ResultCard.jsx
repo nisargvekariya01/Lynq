@@ -125,18 +125,34 @@ export default function ResultCard({ result, onCopy }) {
         </span>
       </div>
 
-      {/* Preview page link */}
+      {/* Preview & Stats links */}
       <div className={styles.previewRow}>
-        <Link
-          to={`/preview/${result.shortCode}`}
-          className={styles.previewLink}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          Link Preview Page
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <Link
+            to={`/stats/${result.shortCode}`}
+            className={styles.previewLink}
+            style={{ color: '#818cf8', fontWeight: '700' }}
+            title="View 3D globe and full analytics"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            Full Analytics & 3D Globe
+          </Link>
+
+          <Link
+            to={`/preview/${result.shortCode}`}
+            className={styles.previewLink}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Link Preview
+          </Link>
+        </div>
 
         {/* Live status indicator */}
         {status === null && (

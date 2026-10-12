@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getUserLinks, getUserAnalyticsSummary, editUrl, deleteUrl } from '../services/api.js';
 import styles from './UserPortfolio.module.css';
 
 export default function UserPortfolio({ isOpen, onClose, onSelectLink, addToast }) {
+  const navigate = useNavigate();
   const [links, setLinks] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -279,6 +281,16 @@ export default function UserPortfolio({ isOpen, onClose, onSelectLink, addToast 
                           title="Open Analytics & Live Stream"
                         >
                           📊
+                        </button>
+                        <button
+                          className={styles.actionBtn}
+                          onClick={() => {
+                            onClose();
+                            navigate(`/stats/${link.shortCode}`);
+                          }}
+                          title="Open 3D Globe & Full Stats Page"
+                        >
+                          🌐
                         </button>
                         {link.editToken && (
                           <>

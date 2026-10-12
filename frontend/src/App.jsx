@@ -5,6 +5,7 @@ import { useToast } from './hooks/useToast.js';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { downloadAnalyticsCsv } from './services/api.js';
 import Home from './pages/Home.jsx';
+import Stats from './pages/Stats.jsx';
 import Unlock from './pages/Unlock.jsx';
 import Preview from './pages/Preview.jsx';
 import RedirectHandler from './pages/RedirectHandler.jsx';
@@ -105,6 +106,10 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
         <Route 
           path="/preview/:shortCode" 
           element={<Preview theme={theme} onToggleTheme={toggleTheme} />} 
+        />
+        <Route 
+          path="/stats/:shortCode" 
+          element={<Stats theme={theme} onToggleTheme={toggleTheme} addToast={addToast} />} 
         />
         <Route 
           path="/404" 

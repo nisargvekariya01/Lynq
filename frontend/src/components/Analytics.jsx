@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -151,6 +152,19 @@ export default function Analytics({ data }) {
         </div>
 
         <div className={styles.headerRight}>
+          <Link
+            to={`/stats/${data.shortCode}`}
+            className={styles.fullStatsBtn}
+            title="Open dedicated analytics page with 3D spherical globe"
+          >
+            <span>🌐 Full Stats & 3D Globe</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </Link>
+
           <button
             type="button"
             className={styles.exportCsvBtn}

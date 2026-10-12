@@ -108,7 +108,7 @@ export const startAnalyticsWorker = () => {
 
         let historyValues = [];
         let historyQueryStr =
-          "INSERT INTO click_history (short_code, visitor_hash, user_agent, clicked_at, country, city, device_type, browser, os, referrer) VALUES ";
+          "INSERT INTO click_history (short_code, visitor_hash, user_agent, clicked_at, country, region, city, latitude, longitude, device_type, browser, os, referrer) VALUES ";
         let paramIdx = 1;
 
         let uniqueValues = [];
@@ -131,13 +131,38 @@ export const startAnalyticsWorker = () => {
           // Phase 2 (Task 2.3): Telemetry parsing (GeoIP, UA, Referrer)
           const cleanIp = extractCleanIp(click.ip);
           let country = null;
+          let region = null;
           let city = null;
+          let latitude = null;
+          let longitude = null;
+
           if (cleanIp && cleanIp !== "127.0.0.1" && cleanIp !== "::1") {
             const geo = geoip.lookup(cleanIp);
             if (geo) {
               country = geo.country || null;
+              region = geo.region || null;
               city = geo.city || null;
+              if (geo.ll && Array.isArray(geo.ll)) {
+                latitude = geo.ll[0];
+                longitude = geo.ll[1];
+              }
             }
+          }
+
+          // Local / private IP fallback so local testing accurately renders globe points
+          if (
+            !country &&
+            (!cleanIp ||
+              cleanIp === "127.0.0.1" ||
+              cleanIp === "::1" ||
+              cleanIp.startsWith("10.") ||
+              cleanIp.startsWith("192.168."))
+          ) {
+            country = "IN";
+            region = "GJ";
+            city = "Surat";
+            latitude = 21.1702;
+            longitude = 72.8311;
           }
 
           const parser = new UAParser(click.userAgent || "");
@@ -147,14 +172,17 @@ export const startAnalyticsWorker = () => {
           const os = parsedUA.os?.name || "Unknown";
           const referrer = parseReferrer(click.referrer);
 
-          historyQueryStr += `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}),`;
+          historyQueryStr += `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}),`;
           historyValues.push(
             click.shortCode,
             visitorHash,
             click.userAgent,
             click.timestamp,
             country,
+            region,
             city,
+            latitude,
+            longitude,
             deviceType,
             browser,
             os,
@@ -164,7 +192,10 @@ export const startAnalyticsWorker = () => {
           eventsToEmit.push({
             shortCode: click.shortCode,
             country: country || "Unknown",
+            region: region || "Unknown",
             city: city || "Unknown",
+            latitude,
+            longitude,
             device: deviceType,
             browser,
             os,

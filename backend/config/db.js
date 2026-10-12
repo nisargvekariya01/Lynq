@@ -73,7 +73,10 @@ export const initDb = async () => {
       ALTER TABLE urls ADD COLUMN IF NOT EXISTS routing_rules JSONB DEFAULT '{}'::jsonb;
 
       ALTER TABLE click_history ADD COLUMN IF NOT EXISTS country VARCHAR(10);
+      ALTER TABLE click_history ADD COLUMN IF NOT EXISTS region VARCHAR(100);
       ALTER TABLE click_history ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+      ALTER TABLE click_history ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+      ALTER TABLE click_history ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
       ALTER TABLE click_history ADD COLUMN IF NOT EXISTS device_type VARCHAR(20);
       ALTER TABLE click_history ADD COLUMN IF NOT EXISTS browser VARCHAR(50);
       ALTER TABLE click_history ADD COLUMN IF NOT EXISTS os VARCHAR(50);

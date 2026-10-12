@@ -479,6 +479,8 @@ export const getUrlInfo = async (shortCode) => {
     browserRes,
     osRes,
     referrerRes,
+    regionRes,
+    geoPointsRes,
   ] = await Promise.all([
     pool.query(
       `
@@ -510,7 +512,7 @@ export const getUrlInfo = async (shortCode) => {
       WHERE short_code = $1 AND country IS NOT NULL AND country != ''
       GROUP BY country
       ORDER BY count DESC
-      LIMIT 10
+      LIMIT 15
     `,
       [shortCode],
     ),
@@ -521,7 +523,7 @@ export const getUrlInfo = async (shortCode) => {
       WHERE short_code = $1 AND city IS NOT NULL AND city != ''
       GROUP BY city, country
       ORDER BY count DESC
-      LIMIT 10
+      LIMIT 15
     `,
       [shortCode],
     ),
@@ -558,6 +560,34 @@ export const getUrlInfo = async (shortCode) => {
     `,
       [shortCode],
     ),
+    pool.query(
+      `
+      SELECT COALESCE(region, 'Unknown') as region, country, COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1 AND region IS NOT NULL AND region != ''
+      GROUP BY region, country
+      ORDER BY count DESC
+      LIMIT 20
+    `,
+      [shortCode],
+    ),
+    pool.query(
+      `
+      SELECT 
+        COALESCE(city, '') as city, 
+        COALESCE(region, '') as region, 
+        COALESCE(country, 'Unknown') as country, 
+        latitude, 
+        longitude, 
+        COUNT(*)::int as count
+      FROM click_history
+      WHERE short_code = $1 AND latitude IS NOT NULL AND longitude IS NOT NULL
+      GROUP BY city, region, country, latitude, longitude
+      ORDER BY count DESC
+      LIMIT 100
+    `,
+      [shortCode],
+    ),
   ]);
 
   return {
@@ -571,6 +601,8 @@ export const getUrlInfo = async (shortCode) => {
     devices: deviceRes.rows,
     countries: countryRes.rows,
     cities: cityRes.rows,
+    regions: regionRes.rows,
+    geoPoints: geoPointsRes.rows,
     browsers: browserRes.rows,
     os: osRes.rows,
     referrers: referrerRes.rows,
