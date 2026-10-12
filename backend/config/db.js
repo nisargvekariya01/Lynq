@@ -14,9 +14,62 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-  max: 30, // Increased for load tests (default is 10)
-  connectionTimeoutMillis: 30000, // 30s to allow Neon serverless compute to wake up
+  max: 20, // Tuned for Neon serverless free/standard tier
+  idleTimeoutMillis: 10000, // 10s: release idle sockets before Neon serverless terminates them remotely
+  connectionTimeoutMillis: 20000, // 20s to allow Neon serverless compute to wake up
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
+  allowExitOnIdle: false,
 });
+
+/**
+ * Critical for serverless PostgreSQL (Neon):
+ * Prevent uncaught exceptions when Neon drops idle client sockets remotely.
+ * pg-pool automatically discards the dead client and creates fresh ones on demand.
+ */
+pool.on("error", (err) => {
+  console.warn("⚠️ PostgreSQL idle client disconnected by server:", err.message);
+});
+
+/**
+ * Transparent query wrapper:
+ * Automatically retries queries ONCE if a stale pooled connection was terminated
+ * by Neon serverless compute between queries.
+ */
+const originalQuery = pool.query.bind(pool);
+
+const isTransientConnError = (err) => {
+  if (!err) return false;
+  const msg = (err.message || "").toLowerCase();
+  const code = err.code || "";
+  return (
+    msg.includes("connection terminated") ||
+    msg.includes("connection closed") ||
+    msg.includes("econnreset") ||
+    msg.includes("epipe") ||
+    code === "57P01" || // admin shutdown / backend terminated
+    code === "08006" || // connection failure
+    code === "08001" || // unable to establish connection
+    code === "08004"
+  );
+};
+
+pool.query = async function (queryTextOrConfig, values, callback) {
+  if (typeof values === "function" || typeof callback === "function") {
+    return originalQuery(queryTextOrConfig, values, callback);
+  }
+
+  try {
+    return await originalQuery(queryTextOrConfig, values);
+  } catch (err) {
+    if (isTransientConnError(err)) {
+      console.warn("🔄 PostgreSQL connection dropped, retrying query on fresh connection...");
+      await new Promise((r) => setTimeout(r, 150));
+      return await originalQuery(queryTextOrConfig, values);
+    }
+    throw err;
+  }
+};
 
 /**
  * Automatically create tables if they do not exist

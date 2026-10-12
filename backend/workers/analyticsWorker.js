@@ -317,9 +317,9 @@ export const startAnalyticsWorker = () => {
           );
         }
       } else {
-        if (err.code === "ECONNRESET" || err.message?.includes("ECONNRESET")) {
-          console.warn("⚠️ Analytics worker: Redis reconnecting, will retry next tick.");
-        } else {
+        // If error occurred before reading queue items, only log non-connection errors
+        const isConnErr = err.code === "ECONNRESET" || err.code === "ECONNREFUSED" || err.message?.includes("ECONNRESET") || err.message?.includes("closed");
+        if (!isConnErr) {
           console.error("❌ Analytics worker error:", err.message);
         }
       }
