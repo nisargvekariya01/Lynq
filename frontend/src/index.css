@@ -316,7 +316,13 @@ a[href*="clerk.com"] {
 /* ── Clerk UserProfile Full Width & Project Theme ────────── */
 .cl-userProfile-root,
 .cl-userProfile-root > .cl-rootBox,
-.cl-userProfile-root .cl-card {
+.cl-userProfile-root .cl-rootBox,
+.cl-userProfile-root .cl-cardBox,
+.cl-userProfile-root .cl-card,
+.cl-rootBox,
+.cl-cardBox,
+[class*="cl-cardBox"],
+[class*="cl-card"] {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
@@ -359,26 +365,56 @@ a[href*="clerk.com"] {
 }
 
 .cl-userProfile-root .cl-navbarButton {
+  position: relative !important;
   border-radius: 10px !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   color: var(--text-secondary) !important;
-  padding: 9px 14px !important;
-  transition: all 0.2s ease !important;
+  padding: 10px 14px 10px 18px !important;
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 4px !important;
 }
 
 .cl-userProfile-root .cl-navbarButton:hover {
   color: var(--text-primary) !important;
   background: var(--bg-glass-hover) !important;
+  transform: translateX(3px) !important;
 }
 
 .cl-userProfile-root .cl-navbarButton[data-active='true'],
 .cl-userProfile-root .cl-navbarButton[aria-selected='true'],
 .cl-userProfile-root .cl-navbarButton__active {
-  background: rgba(99, 102, 241, 0.16) !important;
-  color: #818cf8 !important;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%) !important;
+  color: #a5b4fc !important;
   font-weight: 600 !important;
-  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  border: 1px solid rgba(99, 102, 241, 0.38) !important;
+  box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.25) !important;
+  transform: translateX(5px) !important;
+}
+
+/* Glowing active tab indicator pill that smoothly expands on the active navbar tab */
+.cl-userProfile-root .cl-navbarButton::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 15% !important;
+  height: 70% !important;
+  width: 3.5px !important;
+  border-radius: 0 4px 4px 0 !important;
+  background: linear-gradient(180deg, #6366f1, #a855f7) !important;
+  opacity: 0 !important;
+  transform: scaleY(0.3) !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cl-userProfile-root .cl-navbarButton[data-active='true']::before,
+.cl-userProfile-root .cl-navbarButton[aria-selected='true']::before,
+.cl-userProfile-root .cl-navbarButton__active::before {
+  opacity: 1 !important;
+  transform: scaleY(1) !important;
 }
 
 /* UserProfile Right Content Scroll Area */
@@ -387,8 +423,92 @@ a[href*="clerk.com"] {
   flex: 1 1 0% !important;
   width: 100% !important;
   max-width: 100% !important;
-  padding: 28px 36px !important;
+  padding: 32px 36px 36px 36px !important;
   background: transparent !important;
+  scroll-behavior: smooth !important;
+  overflow-y: auto !important;
+}
+
+/* Perfect alignment for Clerk Header title with Sign Out button */
+.cl-userProfile-root .cl-header,
+.cl-userProfile-root .cl-profilePageHeader,
+.cl-userProfile-root .cl-securityPageHeader,
+.cl-userProfile-root [class*="header_"],
+.cl-userProfile-root [class*="Header_"] {
+  margin: 0 0 20px 0 !important;
+  padding: 0 !important;
+  min-height: 36px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.cl-userProfile-root .cl-headerTitle,
+.cl-userProfile-root .cl-profilePageHeaderTitle,
+.cl-userProfile-root .cl-securityPageHeaderTitle,
+.cl-userProfile-root [class*="headerTitle"],
+.cl-userProfile-root [class*="HeaderTitle"] {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 36px !important;
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 36px !important;
+}
+
+/* Animations for switching between Profile and Security (smooth scroll-down feel) */
+@keyframes clerkScrollDownEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(1.5px);
+  }
+  60% {
+    opacity: 0.92;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes clerkScrollUpEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-34px);
+    filter: blur(1.5px);
+  }
+  60% {
+    opacity: 0.92;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* When navigating to Security, right section smoothly scrolls down into view */
+.lynq-nav-security .cl-page,
+.lynq-nav-security .cl-pageScrollBox > div,
+.lynq-nav-down .cl-page,
+.lynq-nav-down .cl-pageScrollBox > div {
+  animation: clerkScrollDownEntrance 0.44s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: transform, opacity !important;
+}
+
+/* When navigating back to Profile, right section smoothly scrolls upward into view */
+.lynq-nav-profile .cl-page,
+.lynq-nav-profile .cl-pageScrollBox > div,
+.lynq-nav-up .cl-page,
+.lynq-nav-up .cl-pageScrollBox > div {
+  animation: clerkScrollUpEntrance 0.44s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: transform, opacity !important;
 }
 
 .cl-userProfile-root .cl-page {

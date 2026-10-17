@@ -210,6 +210,69 @@ export default function Home({ theme, onToggleTheme, addToast }) {
     };
   }, [handleSelectRecent]);
 
+  // Smooth scroll-down transition when navigating to Security in Clerk UserProfile
+  useEffect(() => {
+    if (activeTab !== 'settings') return;
+
+    const applyNavAnimation = (target) => {
+      const container = document.querySelector(`.${styles.accountCardContainer}`);
+      if (!container) return;
+
+      const isSecurity = target === 'security' || (target === 'hash' && window.location.hash.includes('security'));
+
+      container.classList.remove('lynq-nav-security', 'lynq-nav-profile', 'lynq-nav-down', 'lynq-nav-up');
+      // Force reflow to re-trigger keyframe animations smoothly
+      void container.offsetWidth;
+
+      if (isSecurity) {
+        container.classList.add('lynq-nav-security', 'lynq-nav-down');
+      } else {
+        container.classList.add('lynq-nav-profile', 'lynq-nav-up');
+      }
+
+      const scrollBox = container.querySelector('.cl-pageScrollBox');
+      if (scrollBox) {
+        scrollBox.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    const handleHash = () => {
+      applyNavAnimation('hash');
+    };
+
+    window.addEventListener('hashchange', handleHash);
+
+    // Initial check
+    if (window.location.hash.includes('security')) {
+      applyNavAnimation('security');
+    }
+
+    // Intercept navbar clicks for instantaneous visual feedback
+    const container = document.querySelector(`.${styles.accountCardContainer}`);
+    const handleCardClick = (e) => {
+      const navBtn = e.target.closest('.cl-navbarButton');
+      if (navBtn) {
+        const text = (navBtn.textContent || '').toLowerCase();
+        if (text.includes('security')) {
+          applyNavAnimation('security');
+        } else if (text.includes('profile')) {
+          applyNavAnimation('profile');
+        }
+      }
+    };
+
+    if (container) {
+      container.addEventListener('click', handleCardClick);
+    }
+
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+      if (container) {
+        container.removeEventListener('click', handleCardClick);
+      }
+    };
+  }, [activeTab]);
+
   // Poll for live analytics updates every 5 seconds while a result is shown
   useEffect(() => {
     if (!result?.shortCode) {
@@ -512,48 +575,32 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                       </p>
                     </div>
 
-                    {/* ── User Profile & Sign Out Bar (Moved from header) ── */}
-                    {isSignedIn && user && (
-                      <div className={styles.userSettingProfileBar}>
-                        <div className={styles.userSettingProfileLeft}>
-                          {user.imageUrl ? (
-                            <img src={user.imageUrl} alt={user.fullName || 'User'} className={styles.userSettingAvatarImg} />
-                          ) : (
-                            <div className={styles.userSettingAvatarLetter}>
-                              {(user.firstName || user.username || 'U')[0].toUpperCase()}
-                            </div>
-                          )}
-                          <div className={styles.userSettingMeta}>
-                            <div className={styles.userSettingName}>
-                              {user.fullName || user.firstName || 'User'}
-                            </div>
-                            <div className={styles.userSettingUsername}>
-                              {user.username || user.primaryEmailAddress?.emailAddress || ''}
-                            </div>
-                          </div>
-                        </div>
-
-                        <SignOutButton redirectUrl="/">
-                          <button type="button" className={styles.userSettingSignOutBtn} title="Sign out of your Lynq account">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                              <polyline points="16 17 21 12 16 7" />
-                              <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
-                            <span>Sign out</span>
-                          </button>
-                        </SignOutButton>
-                      </div>
-                    )}
-
                     <div className={styles.userProfileWrapper}>
                       {hasClerk ? (
-                        <UserProfile
-                          routing="hash"
-                          appearance={{
-                            baseTheme: theme === 'dark' ? dark : undefined,
-                          }}
-                        />
+                        <div className={styles.accountCardContainer}>
+                          {/* ── Sign Out Action positioned in Profile section ── */}
+                          {isSignedIn && (
+                            <div className={styles.profileSignOutWrap}>
+                              <SignOutButton redirectUrl="/">
+                                <button type="button" className={styles.userSettingSignOutBtn} title="Sign out of your Lynq account">
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                  </svg>
+                                  <span>Sign out</span>
+                                </button>
+                              </SignOutButton>
+                            </div>
+                          )}
+
+                          <UserProfile
+                            routing="hash"
+                            appearance={{
+                              baseTheme: theme === 'dark' ? dark : undefined,
+                            }}
+                          />
+                        </div>
                       ) : (
                         <div className={styles.mockSettingsCard}>
                           <p>Account settings are managed via your authentication provider.</p>

@@ -74,6 +74,18 @@ function Root() {
           width: '100% !important',
           maxWidth: '100% !important',
         },
+        rootBox: {
+          width: '100% !important',
+          maxWidth: '100% !important',
+        },
+        cardBox: {
+          width: '100% !important',
+          maxWidth: '100% !important',
+        },
+        card: {
+          width: '100% !important',
+          maxWidth: '100% !important',
+        },
         userProfileCard: {
           width: '100% !important',
           maxWidth: '100% !important',
