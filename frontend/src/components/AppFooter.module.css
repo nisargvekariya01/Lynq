@@ -4,18 +4,19 @@
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   background: rgba(10, 10, 20, 0.85);
   backdrop-filter: blur(16px);
-  padding: 60px 20px 32px;
+  padding: 60px 0 32px;
   margin-top: 48px;
 }
 
 .footerGrid {
   max-width: 1120px;
   margin: 0 auto;
+  padding: 0 20px 40px;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 40px;
-  padding-bottom: 40px;
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  box-sizing: border-box;
 }
 
 .footerColBrand {
@@ -106,6 +107,7 @@
 .footerBottom {
   max-width: 1120px;
   margin: 24px auto 0;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -113,6 +115,7 @@
   color: #64748b;
   flex-wrap: wrap;
   gap: 12px;
+  box-sizing: border-box;
 }
 
 
