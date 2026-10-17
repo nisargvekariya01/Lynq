@@ -477,7 +477,10 @@
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
-  max-height: 520px;
+  height: 540px;
+  min-height: 540px;
+  max-height: 540px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
 .sidebarHeader {
@@ -487,6 +490,7 @@
   padding-bottom: 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 .sidebarTitle {
@@ -507,17 +511,28 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.35) transparent;
 }
 
 .sidebarList::-webkit-scrollbar {
   width: 5px;
 }
 
+.sidebarList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .sidebarList::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(99, 102, 241, 0.35);
   border-radius: 4px;
+}
+
+.sidebarList::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.65);
 }
 
 .locationCard {

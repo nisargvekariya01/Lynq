@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Globe from 'react-globe.gl';
 import styles from './GlobeView.module.css';
 import { COUNTRY_CENTROIDS } from '../utils/geoCoordinates.js';
-import { getCountryFlag, getCountryName } from '../utils/telemetry.js';
+import { getCountryName } from '../utils/telemetry.js';
+import CountryFlag, { getCountryFlagImgHtml } from './CountryFlag.jsx';
 
 /**
  * 7 alternating slate-grey tones mapped via Natural Earth's MAPCOLOR7 (values 1..7).
@@ -180,7 +181,7 @@ export default function GlobeView({
     ({ properties: d }) => {
       const popEst = d.POP_EST ? Number(d.POP_EST).toLocaleString() : 'N/A';
       const visitCount = visitsMeta.map[String(d.ISO_A2).toUpperCase()] || 0;
-      const flag = getCountryFlag(d.ISO_A2);
+      const flagHtml = getCountryFlagImgHtml(d.ISO_A2);
 
       return `
         <div style="
@@ -199,7 +200,7 @@ export default function GlobeView({
           pointer-events: none;
         ">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 16px;">${flag || '🌐'}</span>
+            ${flagHtml}
             <b style="font-size: 14px; color: #818cf8;">${d.ADMIN} (${d.ISO_A2})</b>
           </div>
           <div style="color: #cbd5e1; font-size: 12px; margin-bottom: ${visitCount > 0 ? '4px' : '0'};">
@@ -236,24 +237,13 @@ export default function GlobeView({
 
   return (
     <div className={styles.globeContainer} ref={containerRef}>
-      {/* ── Top Bar Controls: Upper Right Corner (Hint + Pause/Spin Toggle) ── */}
+      {/* ── Top Bar Controls: Upper Right Corner (Hint Only) ── */}
       <div className={styles.topOverlay}>
         <div className={styles.toolbar}>
           {/* Interaction hint pill moved to upper-right corner */}
           <div className={styles.hintPillCorner}>
             <span>🖱️ Drag to rotate · Scroll to zoom · Hover country</span>
           </div>
-
-          {/* Auto-Rotation Toggle (Paused by default) */}
-          <button
-            type="button"
-            className={`${styles.toolBtn} ${autoRotate ? styles.toolBtnActive : ''}`}
-            onClick={() => setAutoRotate(!autoRotate)}
-            title={autoRotate ? 'Pause Rotation' : 'Spin Globe'}
-          >
-            <span>{autoRotate ? '⏸️' : '▶️'}</span>
-            <span>{autoRotate ? 'Spinning' : 'Paused'}</span>
-          </button>
         </div>
       </div>
 
@@ -312,7 +302,6 @@ export default function GlobeView({
         {topActiveCountries.length > 0 && (
           <div className={styles.focusList}>
             {topActiveCountries.map((c) => {
-              const flag = getCountryFlag(c.country);
               const name = getCountryName(c.country);
               return (
                 <button
@@ -322,7 +311,7 @@ export default function GlobeView({
                   onClick={() => focusCountry(c.country)}
                   title={`Focus on ${name}`}
                 >
-                  <span>{flag}</span>
+                  <CountryFlag countryCode={c.country} size="sm" />
                   <span>{name}</span>
                   <span className={styles.focusCount}>{c.count}</span>
                 </button>

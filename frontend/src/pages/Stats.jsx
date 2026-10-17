@@ -9,9 +9,9 @@ import { dark } from '@clerk/themes';
 import { useLynqAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { LandingFooter } from '../components/LandingSections.jsx';
-import { getUrlInfo, getLiveStreamUrl, downloadAnalyticsCsv } from '../services/api.js';
-import { getCountryFlag, getCountryName, getReferrerMeta, getDeviceMeta, CHART_COLORS } from '../utils/telemetry.js';
+import { getCountryName, getReferrerMeta, getDeviceMeta, CHART_COLORS } from '../utils/telemetry.js';
 import { getRegionLabel, getMarkerColorByCount } from '../utils/geoCoordinates.js';
+import CountryFlag from '../components/CountryFlag.jsx';
 import GlobeView from '../components/GlobeView.jsx';
 import styles from './Stats.module.css';
 
@@ -390,8 +390,8 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
           <div className={styles.liveTickerBanner}>
             <div className={styles.tickerText}>
               <span className={styles.tickerTag}>⚡ Real-Time Click</span>
-              <span>
-                from <strong>{getCountryFlag(liveClick.country)} {liveClick.city && liveClick.city !== 'Unknown' ? `${liveClick.city}, ` : ''}{getCountryName(liveClick.country)}</strong>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                from <CountryFlag countryCode={liveClick.country} size="sm" /> <strong>{liveClick.city && liveClick.city !== 'Unknown' ? `${liveClick.city}, ` : ''}{getCountryName(liveClick.country)}</strong>
                 {' '}via <strong>{liveClick.browser}</strong> on {liveClick.device}
               </span>
             </div>
@@ -420,7 +420,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
 
           <div className={styles.statCard}>
             <div className={styles.statIconWrap}>
-              {topCountry ? getCountryFlag(topCountry.country) : '🌍'}
+              {topCountry ? <CountryFlag countryCode={topCountry.country} size="lg" /> : '🌍'}
             </div>
             <div>
               <div className={styles.statVal}>
@@ -491,7 +491,6 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
                 {data.regions && data.regions.length > 0 ? (
                   data.regions.map((r, idx) => {
                     const regionName = getRegionLabel(r.region, r.country);
-                    const flag = getCountryFlag(r.country);
                     const pct = Math.round((r.count / (totalClicksCount || 1)) * 100);
                     const colorMeta = getMarkerColorByCount(r.count, data.regions[0]?.count || 1);
 
@@ -499,7 +498,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
                       <div key={`${r.country}-${r.region}-${idx}`} className={styles.locationCard}>
                         <div className={styles.locationTop}>
                           <div className={styles.locationName}>
-                            <span>{flag}</span>
+                            <CountryFlag countryCode={r.country} size="sm" />
                             <span>{regionName}</span>
                           </div>
                           <span className={styles.locationClicks} style={{ color: colorMeta.hex }}>
@@ -634,7 +633,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
                     <div key={c.country} className={styles.breakdownRow}>
                       <div className={styles.breakdownMeta}>
                         <div className={styles.metaLabel}>
-                          <span>{getCountryFlag(c.country)}</span>
+                          <CountryFlag countryCode={c.country} size="sm" />
                           <span>{getCountryName(c.country)}</span>
                         </div>
                         <div className={styles.metaValue}>
