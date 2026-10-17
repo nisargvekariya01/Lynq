@@ -342,6 +342,7 @@ a[href*="clerk.com"] {
 
 /* UserProfile Left Navigation Sidebar */
 .cl-userProfile-root .cl-navbar {
+  position: relative !important;
   background: rgba(255, 255, 255, 0.02) !important;
   border-right: 1px solid var(--border) !important;
   padding: 24px 16px !important;
@@ -362,16 +363,6 @@ a[href*="clerk.com"] {
 .cl-userProfile-root .cl-navbarSubtitle {
   font-size: 13px !important;
   color: var(--text-secondary) !important;
-}
-
-/* UserProfile Left Navigation Sidebar */
-.cl-userProfile-root .cl-navbar {
-  position: relative !important;
-  background: rgba(255, 255, 255, 0.02) !important;
-  border-right: 1px solid var(--border) !important;
-  padding: 24px 16px !important;
-  width: 260px !important;
-  min-width: 240px !important;
 }
 
 /* Sliding Violet Highlight that smoothly glides up/down between Profile and Security */
@@ -435,7 +426,24 @@ a[href*="clerk.com"] {
   font-weight: 600 !important;
 }
 
-/* UserProfile Right Content Scroll Area */
+/* UserProfile Right Content Area without scrollbar */
+.cl-userProfile-root,
+.cl-userProfile-root .cl-card,
+.cl-userProfile-root .cl-pageScrollBox,
+.cl-userProfile-root .cl-scrollBox {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.cl-userProfile-root *::-webkit-scrollbar,
+.cl-userProfile-root::-webkit-scrollbar,
+.cl-userProfile-root .cl-pageScrollBox::-webkit-scrollbar,
+.cl-userProfile-root .cl-scrollBox::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .cl-userProfile-root .cl-pageScrollBox,
 .cl-userProfile-root .cl-scrollBox {
   flex: 1 1 0% !important;
@@ -444,7 +452,8 @@ a[href*="clerk.com"] {
   padding: 32px 36px 36px 36px !important;
   background: transparent !important;
   scroll-behavior: smooth !important;
-  overflow-y: auto !important;
+  overflow: hidden !important;
+  overflow-y: hidden !important;
 }
 
 /* Perfect alignment for Clerk Header title with Sign Out button */

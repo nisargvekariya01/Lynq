@@ -466,15 +466,15 @@
 
 .profileBottomSignOutSection {
   width: 100%;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+  margin-top: 0;
+  padding-top: 14px;
+  border-top: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   box-sizing: border-box;
-  animation: fadeInUp 0.4s var(--ease-out) both;
+  animation: fadeInUp 0.35s var(--ease-out) both;
 }
 
 .profileBottomSignOutInfo {
