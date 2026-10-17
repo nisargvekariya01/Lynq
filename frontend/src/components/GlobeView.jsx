@@ -24,11 +24,11 @@ const INACTIVE_GREY_PALETTE = [
  * 
  * Powered by official globe.gl (via react-globe.gl)
  * - Natural Earth 110m countries GeoJSON
- * - Hexed polygons with resolution=3, margin=0.3, useDots=true
- * - Dark Earth surface texture + deep space night sky background
- * - Themed visit density palette with distinct boundary greys for other countries
- * - Hover tooltip with Country Name (ADMIN), ISO_A2, Population (POP_EST)
- * - Drag to rotate, pinch/scroll to zoom, auto-rotation control
+ * - Auto-orients to highest visit density country on initial load
+ * - Default state is stationary (paused)
+ * - Always in visit density mode with Lynq theme colors
+ * - Unvisited countries rendered with distinct slate-grey borders
+ * - Interaction hints placed in upper-right corner
  */
 export default function GlobeView({ 
   geoPoints = [], 
@@ -38,14 +38,16 @@ export default function GlobeView({
 }) {
   const containerRef = useRef(null);
   const globeEl = useRef(null);
+  const hasOrientedRef = useRef(false);
+
   const [countriesData, setCountriesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? Math.min(window.innerWidth - 350, 840) : 800,
     height: 540,
   });
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [colorMode, setColorMode] = useState('telemetry'); // 'telemetry' (Visit Density) | 'random'
+  // Always paused by default
+  const [autoRotate, setAutoRotate] = useState(false);
   const [hoveredCountry, setHoveredCountry] = useState(null);
 
   // 1. Load Natural Earth 110m countries GeoJSON
@@ -99,7 +101,7 @@ export default function GlobeView({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // 3. OrbitControls settings (auto-rotation speed, drag, zoom)
+  // 3. OrbitControls settings (always paused by default)
   useEffect(() => {
     if (globeEl.current) {
       const controls = globeEl.current.controls();
@@ -111,24 +113,25 @@ export default function GlobeView({
     }
   }, [autoRotate]);
 
-  // Initial camera orientation centered on equator
+  // 4. Automatically orient camera to highest visit density country upon opening
   useEffect(() => {
-    if (globeEl.current) {
-      globeEl.current.pointOfView({ lat: 5, lng: 10, altitude: 2.15 });
-    }
-  }, [loading]);
+    if (!globeEl.current || loading || countriesData.length === 0) return;
 
-  // 4. Stable random colors map per country (official globe.gl formula)
-  const randomColorMap = useMemo(() => {
-    const map = new Map();
-    countriesData.forEach((feat, idx) => {
-      const p = feat.properties || {};
-      const key = p.ISO_A2 || p.ADMIN || idx;
-      const hex = `#${Math.round(Math.random() * Math.pow(2, 24)).toString(16).padStart(6, '0')}`;
-      map.set(key, hex);
-    });
-    return map;
-  }, [countriesData]);
+    if (!hasOrientedRef.current) {
+      // countries is sorted by visits count descending: countries[0] is top density
+      const topCountry = countries?.[0]?.country;
+      const coord = topCountry ? COUNTRY_CENTROIDS[String(topCountry).toUpperCase()] : null;
+
+      if (coord) {
+        hasOrientedRef.current = true;
+        // Fly smoothly to high-density country
+        globeEl.current.pointOfView({ lat: coord.lat, lng: coord.lng, altitude: 2.15 }, 1200);
+      } else if (countries && countries.length === 0) {
+        hasOrientedRef.current = true;
+        globeEl.current.pointOfView({ lat: 15, lng: 10, altitude: 2.15 }, 1000);
+      }
+    }
+  }, [loading, countries, countriesData]);
 
   // Telemetry visits map for data-driven color mode
   const visitsMeta = useMemo(() => {
@@ -142,20 +145,12 @@ export default function GlobeView({
     return { map, max };
   }, [countries]);
 
-  // 5. Hex Polygon Color function
+  // 5. Hex Polygon Color function: Always Visible Density Mode
   const getHexPolygonColor = useCallback(
     (feat) => {
       const p = feat.properties || {};
-      const key = p.ISO_A2 || p.ADMIN;
       const isHovered = hoveredCountry?.properties?.ISO_A2 === p.ISO_A2;
 
-      // Random Colors Mode (Official Globe.gl example behavior)
-      if (colorMode === 'random') {
-        if (isHovered) return '#ffffff';
-        return randomColorMap.get(key) || '#38bdf8';
-      }
-
-      // Telemetry / Visit Density mode
       const count = visitsMeta.map[String(p.ISO_A2).toUpperCase()] || 0;
 
       // Non-visited / other countries:
@@ -177,7 +172,7 @@ export default function GlobeView({
       if (ratio > 0.20) return '#6366f1'; // Medium: Lynq Primary Indigo
       return '#06b6d4';                  // Low / Standard: Lynq Cyber Cyan
     },
-    [colorMode, randomColorMap, visitsMeta, hoveredCountry]
+    [visitsMeta, hoveredCountry]
   );
 
   // 6. Hex Polygon Hover Label (ADMIN, ISO_A2, POP_EST)
@@ -241,36 +236,25 @@ export default function GlobeView({
 
   return (
     <div className={styles.globeContainer} ref={containerRef}>
-      {/* ── Top Bar Overlay Toolbar (Cleaned, Red Highlighted Items Removed) ── */}
+      {/* ── Top Bar Controls: Upper Right Corner (Hint + Pause/Spin Toggle) ── */}
       <div className={styles.topOverlay}>
         <div className={styles.toolbar}>
-          {/* Mode Switcher: Visit Density vs Random Colors */}
-          <button
-            type="button"
-            className={`${styles.toolBtn} ${colorMode === 'telemetry' ? styles.toolBtnActive : ''}`}
-            onClick={() => setColorMode(colorMode === 'telemetry' ? 'random' : 'telemetry')}
-            title="Toggle between Lynq Visit Density theme and official random colors"
-          >
-            <span>{colorMode === 'telemetry' ? '📊' : '🎨'}</span>
-            <span>{colorMode === 'telemetry' ? 'Visit Density' : 'Random Colors'}</span>
-          </button>
+          {/* Interaction hint pill moved to upper-right corner */}
+          <div className={styles.hintPillCorner}>
+            <span>🖱️ Drag to rotate · Scroll to zoom · Hover country</span>
+          </div>
 
-          {/* Auto-Rotation Toggle */}
+          {/* Auto-Rotation Toggle (Paused by default) */}
           <button
             type="button"
             className={`${styles.toolBtn} ${autoRotate ? styles.toolBtnActive : ''}`}
             onClick={() => setAutoRotate(!autoRotate)}
-            title={autoRotate ? 'Pause Auto-Rotation' : 'Resume Auto-Rotation'}
+            title={autoRotate ? 'Pause Rotation' : 'Spin Globe'}
           >
             <span>{autoRotate ? '⏸️' : '▶️'}</span>
             <span>{autoRotate ? 'Spinning' : 'Paused'}</span>
           </button>
         </div>
-      </div>
-
-      {/* ── Interaction Hint ──────────────────────────────────────────────── */}
-      <div className={styles.hintPill}>
-        <span>🖱️ Drag to rotate · Scroll to zoom · Hover country for info</span>
       </div>
 
       {/* ── Globe.gl Canvas Wrapper ────────────────────────────────────────── */}
@@ -301,37 +285,27 @@ export default function GlobeView({
       <div className={styles.bottomOverlay}>
         {/* Dynamic Legend */}
         <div className={styles.legendBar}>
-          <span className={styles.legendLabel}>
-            {colorMode === 'random' ? 'Palette:' : 'Density Tier:'}
-          </span>
-          {colorMode === 'random' ? (
-            <div className={styles.legendItem}>
-              <span className={styles.sampleBadge}>Official 24-bit Hex Colors</span>
-            </div>
-          ) : (
-            <>
-              <div className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#ec4899', color: '#ec4899' }} />
-                <span>Peak</span>
-              </div>
-              <div className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#8b5cf6', color: '#8b5cf6' }} />
-                <span>High</span>
-              </div>
-              <div className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#6366f1', color: '#6366f1' }} />
-                <span>Medium</span>
-              </div>
-              <div className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#06b6d4', color: '#06b6d4' }} />
-                <span>Low</span>
-              </div>
-              <div className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#526075', color: '#526075' }} />
-                <span>Other Countries</span>
-              </div>
-            </>
-          )}
+          <span className={styles.legendLabel}>Density Tier:</span>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#ec4899', color: '#ec4899' }} />
+            <span>Peak</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#8b5cf6', color: '#8b5cf6' }} />
+            <span>High</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#6366f1', color: '#6366f1' }} />
+            <span>Medium</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#06b6d4', color: '#06b6d4' }} />
+            <span>Low</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#526075', color: '#526075' }} />
+            <span>Other Countries</span>
+          </div>
         </div>
 
         {/* Quick Country Focus Chips */}
