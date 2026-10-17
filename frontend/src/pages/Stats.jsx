@@ -13,6 +13,7 @@ import { getCountryName, getReferrerMeta, getDeviceMeta, CHART_COLORS } from '..
 import { getRegionLabel, getMarkerColorByCount } from '../utils/geoCoordinates.js';
 import CountryFlag from '../components/CountryFlag.jsx';
 import GlobeView from '../components/GlobeView.jsx';
+import { getUrlInfo, getLiveStreamUrl, downloadAnalyticsCsv } from '../services/api.js';
 import styles from './Stats.module.css';
 
 export default function Stats({ theme, onToggleTheme, addToast }) {
