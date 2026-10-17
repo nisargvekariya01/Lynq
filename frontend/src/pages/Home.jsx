@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { SignInButton, UserProfile, SignOutButton } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +28,8 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('links'); // 'links' | 'settings'
+  const [isProfileSection, setIsProfileSection] = useState(!window.location.hash.includes('security'));
+  const [signOutPortalTarget, setSignOutPortalTarget] = useState(null);
   const [userLinks, setUserLinks] = useState([]);
   const [recentUrls, setRecentUrls] = useLocalStorage('lynq-recent', []);
 
@@ -210,25 +213,74 @@ export default function Home({ theme, onToggleTheme, addToast }) {
     };
   }, [handleSelectRecent]);
 
-  // Smooth scroll-down transition when navigating to Security in Clerk UserProfile
+  // Manage Clerk UserProfile: Smooth sliding navbar highlight, slow scroll animations, and end-of-profile Sign Out mounting
   useEffect(() => {
     if (activeTab !== 'settings') return;
 
-    const applyNavAnimation = (target) => {
+    let resizeTimer = null;
+
+    const getIsSecurity = () => window.location.hash.includes('security');
+
+    // 1. Mount Sign Out container at the very end of Profile section (.cl-page)
+    const attachSignOutMount = (isSec) => {
+      if (isSec) {
+        setSignOutPortalTarget(null);
+        const existing = document.getElementById('lynq-signout-mount');
+        if (existing) existing.remove();
+        return;
+      }
+
+      const page = document.querySelector('.cl-userProfile-root .cl-page');
+      if (page) {
+        let mount = page.querySelector('#lynq-signout-mount');
+        if (!mount) {
+          mount = document.createElement('div');
+          mount.id = 'lynq-signout-mount';
+          page.appendChild(mount);
+        }
+        setSignOutPortalTarget(mount);
+      }
+    };
+
+    // 2. Sliding violet navbar indicator pill moving smoothly up and down
+    const updateSlidingIndicator = (isSec) => {
+      const navbar = document.querySelector('.cl-userProfile-root .cl-navbar');
+      if (!navbar) return;
+
+      let indicator = navbar.querySelector('#lynq-nav-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'lynq-nav-indicator';
+        indicator.className = 'lynq-nav-indicator';
+        navbar.appendChild(indicator);
+      }
+
+      const buttons = navbar.querySelectorAll('.cl-navbarButton');
+      if (buttons.length >= 2) {
+        const targetBtn = isSec ? buttons[1] : buttons[0];
+        if (targetBtn) {
+          const navRect = navbar.getBoundingClientRect();
+          const btnRect = targetBtn.getBoundingClientRect();
+          const topOffset = btnRect.top - navRect.top;
+          const leftOffset = btnRect.left - navRect.left;
+
+          indicator.style.top = `${topOffset}px`;
+          indicator.style.left = `${leftOffset}px`;
+          indicator.style.width = `${btnRect.width}px`;
+          indicator.style.height = `${btnRect.height}px`;
+          indicator.style.opacity = '1';
+        }
+      }
+    };
+
+    // 3. Slow scroll up / down animation for right section
+    const applyScrollAnimation = (direction) => {
       const container = document.querySelector(`.${styles.accountCardContainer}`);
       if (!container) return;
 
-      const isSecurity = target === 'security' || (target === 'hash' && window.location.hash.includes('security'));
-
-      container.classList.remove('lynq-nav-security', 'lynq-nav-profile', 'lynq-nav-down', 'lynq-nav-up');
-      // Force reflow to re-trigger keyframe animations smoothly
-      void container.offsetWidth;
-
-      if (isSecurity) {
-        container.classList.add('lynq-nav-security', 'lynq-nav-down');
-      } else {
-        container.classList.add('lynq-nav-profile', 'lynq-nav-up');
-      }
+      container.classList.remove('lynq-slow-scroll-down', 'lynq-slow-scroll-up');
+      void container.offsetWidth; // Force reflow
+      container.classList.add(direction === 'down' ? 'lynq-slow-scroll-down' : 'lynq-slow-scroll-up');
 
       const scrollBox = container.querySelector('.cl-pageScrollBox');
       if (scrollBox) {
@@ -236,27 +288,55 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       }
     };
 
+    const updateAll = (forcedDirection = null) => {
+      const isSec = getIsSecurity();
+      setIsProfileSection(!isSec);
+
+      if (forcedDirection) {
+        applyScrollAnimation(forcedDirection);
+      }
+
+      updateSlidingIndicator(isSec);
+      attachSignOutMount(isSec);
+    };
+
+    // Initial positioning
+    const initialIsSec = getIsSecurity();
+    setIsProfileSection(!initialIsSec);
+
+    const t1 = setTimeout(() => {
+      updateSlidingIndicator(initialIsSec);
+      attachSignOutMount(initialIsSec);
+    }, 80);
+
+    const t2 = setTimeout(() => {
+      updateSlidingIndicator(initialIsSec);
+      attachSignOutMount(initialIsSec);
+    }, 250);
+
+    const t3 = setTimeout(() => {
+      updateSlidingIndicator(initialIsSec);
+      attachSignOutMount(initialIsSec);
+    }, 600);
+
+    // Hash change handler
     const handleHash = () => {
-      applyNavAnimation('hash');
+      const isSec = getIsSecurity();
+      updateAll(isSec ? 'down' : 'up');
     };
 
     window.addEventListener('hashchange', handleHash);
 
-    // Initial check
-    if (window.location.hash.includes('security')) {
-      applyNavAnimation('security');
-    }
-
-    // Intercept navbar clicks for instantaneous visual feedback
+    // Navbar click interception for instantaneous fluid response
     const container = document.querySelector(`.${styles.accountCardContainer}`);
     const handleCardClick = (e) => {
       const navBtn = e.target.closest('.cl-navbarButton');
       if (navBtn) {
         const text = (navBtn.textContent || '').toLowerCase();
         if (text.includes('security')) {
-          applyNavAnimation('security');
+          updateAll('down');
         } else if (text.includes('profile')) {
-          applyNavAnimation('profile');
+          updateAll('up');
         }
       }
     };
@@ -265,11 +345,42 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       container.addEventListener('click', handleCardClick);
     }
 
+    // Observer to re-attach mount point if Clerk updates/re-renders the page
+    const cardRoot = document.querySelector('.cl-userProfile-root');
+    let observer = null;
+    if (cardRoot) {
+      observer = new MutationObserver(() => {
+        const isSec = getIsSecurity();
+        if (!isSec) {
+          attachSignOutMount(false);
+        }
+      });
+      observer.observe(cardRoot, { childList: true, subtree: true });
+    }
+
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        updateSlidingIndicator(getIsSecurity());
+        attachSignOutMount(getIsSecurity());
+      }, 60);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
       window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('resize', handleResize);
       if (container) {
         container.removeEventListener('click', handleCardClick);
       }
+      if (observer) {
+        observer.disconnect();
+      }
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(resizeTimer);
     };
   }, [activeTab]);
 
@@ -578,9 +689,20 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                     <div className={styles.userProfileWrapper}>
                       {hasClerk ? (
                         <div className={styles.accountCardContainer}>
-                          {/* ── Sign Out Action positioned in Profile section ── */}
-                          {isSignedIn && (
-                            <div className={styles.profileSignOutWrap}>
+                          <UserProfile
+                            routing="hash"
+                            appearance={{
+                              baseTheme: theme === 'dark' ? dark : undefined,
+                            }}
+                          />
+
+                          {/* ── Sign Out Action: portaled to the end of Profile section ── */}
+                          {isSignedIn && isProfileSection && signOutPortalTarget && createPortal(
+                            <div className={styles.profileBottomSignOutSection}>
+                              <div className={styles.profileBottomSignOutInfo}>
+                                <div className={styles.profileBottomSignOutTitle}>Sign out</div>
+                                <div className={styles.profileBottomSignOutDesc}>Sign out of your Lynq account session on this device</div>
+                              </div>
                               <SignOutButton redirectUrl="/">
                                 <button type="button" className={styles.userSettingSignOutBtn} title="Sign out of your Lynq account">
                                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -591,15 +713,9 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                                   <span>Sign out</span>
                                 </button>
                               </SignOutButton>
-                            </div>
+                            </div>,
+                            signOutPortalTarget
                           )}
-
-                          <UserProfile
-                            routing="hash"
-                            appearance={{
-                              baseTheme: theme === 'dark' ? dark : undefined,
-                            }}
-                          />
                         </div>
                       ) : (
                         <div className={styles.mockSettingsCard}>

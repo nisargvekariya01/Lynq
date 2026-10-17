@@ -464,11 +464,34 @@
   margin: 0 auto;
 }
 
-.profileSignOutWrap {
-  position: absolute;
-  top: 32px;
-  right: 36px;
-  z-index: 25;
+.profileBottomSignOutSection {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-sizing: border-box;
+  animation: fadeInUp 0.4s var(--ease-out) both;
+}
+
+.profileBottomSignOutInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileBottomSignOutTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profileBottomSignOutDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .userSettingSignOutBtn {
@@ -488,6 +511,7 @@
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .userSettingSignOutBtn:hover {
@@ -496,12 +520,11 @@
   transform: translateY(-1px);
 }
 
-@media (max-width: 768px) {
-  .profileSignOutWrap {
-    position: static;
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
+@media (max-width: 640px) {
+  .profileBottomSignOutSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
   }
 }
 
