@@ -210,6 +210,46 @@ export const shortenUrl = async (
   };
 };
 
+// Helper to queue click analytics with rapid duplicate-click suppression
+const queueAnalyticsClick = async (shortCode, ip, userAgent, referrer, extraData = {}) => {
+  try {
+    const cleanIp = (ip || "").replace(/^::ffff:/, "").split(",")[0].trim();
+    const visitorHash = crypto
+      .createHash("md5")
+      .update(`${cleanIp}-${userAgent || ""}`)
+      .digest("hex");
+    const dedupKey = `click_dedup:${shortCode}:${visitorHash}`;
+
+    let shouldTrack = true;
+    if (redisClient.isReady) {
+      // Set key with 2s expiry only if it doesn't already exist (NX)
+      // Returns 'OK' on first click, null on rapid duplicates (within 2s)
+      const isFirst = await redisClient.set(dedupKey, "1", { NX: true, EX: 2 });
+      if (!isFirst) {
+        shouldTrack = false;
+      }
+    }
+
+    if (shouldTrack) {
+      const clickData = JSON.stringify({
+        shortCode,
+        ip,
+        userAgent,
+        referrer,
+        visitorHash,
+        timestamp: new Date().toISOString(),
+        ...extraData,
+      });
+      // Push to the right side of the list (non-blocking)
+      redisClient.rPush("analytics_queue", clickData).catch((err) => {
+        console.error("Redis rPush failed:", err.message);
+      });
+    }
+  } catch (err) {
+    console.error("Failed to queue analytics:", err.message);
+  }
+};
+
 export const resolveUrl = async (
   shortCode,
   ip = "",
@@ -292,18 +332,8 @@ export const resolveUrl = async (
 
   if (isExpired || isMaxClicks) {
     if (fallbackUrl) {
-      // Record analytics even for fallback routing
-      try {
-        const clickData = JSON.stringify({
-          shortCode,
-          ip,
-          userAgent,
-          referrer,
-          timestamp: new Date().toISOString(),
-          isFallback: true,
-        });
-        redisClient.rPush("analytics_queue", clickData).catch(() => {});
-      } catch {}
+      // Record analytics even for fallback routing (deduplicated)
+      queueAnalyticsClick(shortCode, ip, userAgent, referrer, { isFallback: true });
       return { requiresPassword: false, originalUrl: fallbackUrl, isFallback: true };
     }
 
@@ -350,23 +380,8 @@ export const resolveUrl = async (
     }
   }
 
-  // 5. v2 Analytics Queue (Fire & Forget, zero DB connections on hot-path!)
-  try {
-    const clickData = JSON.stringify({
-      shortCode,
-      ip,
-      userAgent,
-      referrer,
-      timestamp: new Date().toISOString(),
-      resolvedDestination,
-    });
-    // Push to the right side of the list (non-blocking)
-    redisClient.rPush("analytics_queue", clickData).catch((err) => {
-      console.error("Redis rPush failed:", err.message);
-    });
-  } catch (err) {
-    console.error("Failed to queue analytics:", err.message);
-  }
+  // 5. v2 Analytics Queue (Fire & Forget with 2s rapid deduplication)
+  queueAnalyticsClick(shortCode, ip, userAgent, referrer, { resolvedDestination });
 
   return { requiresPassword: false, originalUrl: resolvedDestination };
 };

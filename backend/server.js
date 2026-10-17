@@ -138,6 +138,10 @@ const start = async () => {
       res.json({ success: true, message: "Lynq API is active", health: "/api/health" });
     });
 
+    // ── Static assets & bot ignores ─────────────────────────────────────────
+    app.get("/favicon.ico", (_req, res) => res.status(204).end());
+    app.get("/robots.txt", (_req, res) => res.status(204).end());
+
     // ── Short Code Redirect ──────────────────────────────────────────────────
     // Must come AFTER /api/* routes to avoid conflicts
     app.get("/:shortCode", handleRedirect);

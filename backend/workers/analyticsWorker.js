@@ -120,13 +120,26 @@ export const startAnalyticsWorker = () => {
         const urlLastVisitMap = {};
         const seenUniqueInBatch = new Set();
         const eventsToEmit = [];
+        const visitorLastClickTime = new Map();
 
         validClicks.forEach((click) => {
           const visitorString = `${click.ip}-${click.userAgent}`;
-          const visitorHash = crypto
-            .createHash("md5")
-            .update(visitorString)
-            .digest("hex");
+          const visitorHash =
+            click.visitorHash ||
+            crypto
+              .createHash("md5")
+              .update(visitorString)
+              .digest("hex");
+
+          const clickTime = new Date(click.timestamp || Date.now()).getTime();
+          const visitorShortCodeKey = `${click.shortCode}:${visitorHash}`;
+          const prevTime = visitorLastClickTime.get(visitorShortCodeKey);
+
+          // Suppress duplicate clicks from same visitor within 2000ms (e.g. StrictMode, double-clicks)
+          if (prevTime !== undefined && Math.abs(clickTime - prevTime) < 2000) {
+            return;
+          }
+          visitorLastClickTime.set(visitorShortCodeKey, clickTime);
 
           // Phase 2 (Task 2.3): Telemetry parsing (GeoIP, UA, Referrer)
           const cleanIp = extractCleanIp(click.ip);

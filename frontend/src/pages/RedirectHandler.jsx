@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolveAndTrack } from '../services/api.js';
 import styles from './Unlock.module.css'; // Reuse existing sleek styles for the waiting page
+
+// In-memory set to prevent duplicate concurrent resolution for the same shortCode (e.g. React StrictMode)
+const activeResolutions = new Set();
 
 /**
  * RedirectHandler
@@ -13,13 +16,23 @@ export default function RedirectHandler() {
   const { shortCode } = useParams();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const executedRef = useRef(false);
 
   useEffect(() => {
     if (!shortCode) return;
 
+    // Prevent duplicate execution from React StrictMode or rapid re-renders
+    if (executedRef.current || activeResolutions.has(shortCode)) {
+      return;
+    }
+
+    executedRef.current = true;
+    activeResolutions.add(shortCode);
+
     // Background fetch to wake up server and resolve link
     resolveAndTrack(shortCode)
       .then(({ result }) => {
+        setTimeout(() => activeResolutions.delete(shortCode), 4000);
         if (result.requiresPassword) {
           navigate(`/unlock/${shortCode}`);
         } else {
@@ -28,6 +41,7 @@ export default function RedirectHandler() {
         }
       })
       .catch((err) => {
+        activeResolutions.delete(shortCode);
         if (err.response?.status === 404) {
           navigate('/404', { replace: true });
         } else {
