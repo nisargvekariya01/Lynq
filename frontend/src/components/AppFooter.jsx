@@ -65,13 +65,7 @@ export default function AppFooter() {
 
       {/* Footer Bottom Row */}
       <div className={styles.footerBottom}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className={styles.statusPill}>
-            <span className={styles.statusDot} />
-            Systems Online
-          </span>
-          <span>© {new Date().getFullYear()} Lynq Technologies Inc. All rights reserved.</span>
-        </div>
+        <div>© {new Date().getFullYear()} Lynq Technologies Inc. All rights reserved.</div>
         <div className={styles.footerLinks}>
           <span>Privacy Policy</span>
           <span>Terms of Service</span>
