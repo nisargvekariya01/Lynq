@@ -444,6 +444,32 @@ a[href*="clerk.com"] {
   height: 0 !important;
 }
 
+/* Completely hide Clerk "Secured by" badge, logo, and footer watermarks */
+.cl-userProfile-root .cl-footer,
+.cl-userProfile-root .cl-footerAction,
+.cl-userProfile-root .cl-navbarFooter,
+.cl-userProfile-root [class*="footer"],
+.cl-userProfile-root [class*="Footer"],
+.cl-userProfile-root [class*="securedBy"],
+.cl-userProfile-root [class*="SecuredBy"],
+.cl-userProfile-root [class*="logoBox"],
+.cl-userProfile-root [class*="LogoBox"],
+.cl-userProfile-root a[href*="clerk.com"],
+.cl-userProfile-root a[href*="clerk.dev"],
+.cl-navbarFooter,
+.cl-footer,
+.cl-footerAction {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
 .cl-userProfile-root .cl-pageScrollBox,
 .cl-userProfile-root .cl-scrollBox {
   flex: 1 1 0% !important;

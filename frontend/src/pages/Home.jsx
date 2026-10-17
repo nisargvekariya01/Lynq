@@ -271,6 +271,17 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           indicator.style.opacity = '1';
         }
       }
+
+      // Hide any "Secured by" watermark element in navbar
+      navbar.querySelectorAll('*').forEach((el) => {
+        if (
+          el.textContent &&
+          el.textContent.trim().toLowerCase().includes('secured by') &&
+          el.children.length <= 2
+        ) {
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
     };
 
     // 3. Slow scroll up / down animation for right section
@@ -693,6 +704,15 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                             routing="hash"
                             appearance={{
                               baseTheme: theme === 'dark' ? dark : undefined,
+                              layout: {
+                                logoPlacement: 'none',
+                              },
+                              elements: {
+                                footer: { display: 'none' },
+                                footerAction: { display: 'none' },
+                                navbarFooter: { display: 'none' },
+                                logoBox: { display: 'none' },
+                              },
                             }}
                           />
 
