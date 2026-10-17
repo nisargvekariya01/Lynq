@@ -641,5 +641,33 @@ a[href*="clerk.com"] {
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
 }
 
+/* ── Theme View Transitions (Circular Spread-Out & Spread-In) ── */
+::view-transition-image-pair(root) {
+  isolation: isolate !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+  mix-blend-mode: normal !important;
+  display: block !important;
+}
+
+/* Spread Out (Dark -> Light): New light view expands outward over old dark view */
+[data-theme-transition='spread-out']::view-transition-old(root) {
+  z-index: 1 !important;
+}
+[data-theme-transition='spread-out']::view-transition-new(root) {
+  z-index: 999999 !important;
+}
+
+/* Spread In (Light -> Dark): Old light view contracts inward over new dark view */
+[data-theme-transition='spread-in']::view-transition-old(root) {
+  z-index: 999999 !important;
+}
+[data-theme-transition='spread-in']::view-transition-new(root) {
+  z-index: 1 !important;
+}
+
 
 
