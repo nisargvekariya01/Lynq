@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globe.gl - Hexed Polygons</title>
+  <!-- Load official globe.gl library from CDN -->
+  <script src="//cdn.jsdelivr.net/npm/globe.gl"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #020617;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #globeViz {
+      width: 100vw;
+      height: 100vh;
+    }
+    /* Sleek UI overlay banner */
+    .overlay-info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
+      padding: 12px 18px;
+      color: #f8fafc;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+    .overlay-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .overlay-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    /* Custom tooltip styling */
+    .scene-tooltip {
+      background: rgba(15, 23, 42, 0.95) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+      color: #ffffff !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      font-size: 13px !important;
+      line-height: 1.45 !important;
+      pointer-events: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay-info">
+    <div class="overlay-title">
+      <span>🌐</span> Globe.gl Hexed Polygons
+    </div>
+    <div class="overlay-desc">
+      Natural Earth 110m Countries · Res: 3 · Margin: 0.3 · Drag & Zoom
+    </div>
+  </div>
+
+  <div id="globeViz"></div>
+
+  <script>
+    // Load Natural Earth 110m countries GeoJSON dataset
+    // (Using jsDelivr CDN with local fallback)
+    const GEOJSON_URL = '//cdn.jsdelivr.net/gh/vasturiano/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson';
+
+    fetch(GEOJSON_URL)
+      .then(res => res.json())
+      .then(countries => {
+        const world = new Globe(document.getElementById('globeViz'))
+          // 5. Dark earth texture + night sky background
+          .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
+          .backgroundImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png')
+          
+          // 2. Load countries features
+          .hexPolygonsData(countries.features)
+          
+          // 3. Settings matching official example
+          .hexPolygonResolution(3)
+          .hexPolygonMargin(0.3)
+          .hexPolygonUseDots(true)
+          
+          // Random 24-bit hex color for each country feature
+          .hexPolygonColor(() => `#${Math.round(Math.random() * Math.pow(2, 24)).toString(16).padStart(6, '0')}`)
+          
+          // 4. Hover tooltip label with ADMIN, ISO_A2, POP_EST
+          .hexPolygonLabel(({ properties: d }) => `
+            <b>${d.ADMIN} (${d.ISO_A2})</b> <br />
+            Population: <i>${Number(d.POP_EST).toLocaleString()}</i>
+          `);
+
+        // Enable auto-rotation
+        const controls = world.controls();
+        if (controls) {
+          controls.autoRotate = true;
+          controls.autoRotateSpeed = 0.5;
+        }
+
+        // Adjust camera point of view
+        world.pointOfView({ lat: 15, lng: 0, altitude: 2.2 });
+      })
+      .catch(err => {
+        console.error('Error fetching GeoJSON dataset:', err);
+      });
+  </script>
+</body>
+</html>
