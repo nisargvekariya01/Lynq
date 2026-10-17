@@ -25,8 +25,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  max-width: 1240px;
+  padding: 14px 20px;
+  max-width: 1120px;
   margin: 0 auto;
   width: 100%;
 }
@@ -123,10 +123,10 @@
 }
 
 .contentWrapper {
-  max-width: 1240px;
+  max-width: 1120px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 32px 20px 80px;
 }
 
 /* ── Top Navigation Bar ────────────────────────────────────────────────────── */
@@ -799,6 +799,124 @@
   font-size: 14px;
   color: #94a3b8;
   margin-bottom: 24px;
+}
+
+/* ── Link Preview & AI Destination Card ────────────────────────────────────── */
+.previewCard {
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.previewCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #6366f1, #a855f7);
+}
+
+.previewCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.aiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c084fc;
+}
+
+.sparkle {
+  animation: sparkleRotate 3s infinite linear;
+  display: inline-block;
+}
+
+@keyframes sparkleRotate {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(15deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.previewBadges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cachedBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.statusPillActive {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.statusPillBroken {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.previewCardBody {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.aiLoadingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.aiSummaryText {
+  margin: 0;
+  color: #e2e8f0;
+}
+
+.brokenNotice {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {

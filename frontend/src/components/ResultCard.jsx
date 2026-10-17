@@ -125,7 +125,7 @@ export default function ResultCard({ result, onCopy }) {
         </span>
       </div>
 
-      {/* Preview & Stats links */}
+      {/* Full Analytics link */}
       <div className={styles.previewRow}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Link
@@ -139,18 +139,7 @@ export default function ResultCard({ result, onCopy }) {
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
-            Full Analytics & 3D Globe
-          </Link>
-
-          <Link
-            to={`/preview/${result.shortCode}`}
-            className={styles.previewLink}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            Link Preview
+            Full Analytics
           </Link>
         </div>
 

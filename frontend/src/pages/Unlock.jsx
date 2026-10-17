@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { verifyPassword } from '../services/api.js';
-import ThemeToggle from '../components/ThemeToggle.jsx';
-import homeStyles from './Home.module.css';
+import AppHeader from '../components/AppHeader.jsx';
 import styles from './Unlock.module.css';
 
 export default function Unlock({ theme, onToggleTheme, addToast }) {
@@ -30,32 +29,7 @@ export default function Unlock({ theme, onToggleTheme, addToast }) {
 
   return (
     <div className={styles.container}>
-      {/* ── Header ─────────────────────────────────── */}
-      <header className={homeStyles.header}>
-        <div className={homeStyles.headerInner}>
-          <div 
-            className={homeStyles.logo} 
-            style={{ cursor: 'pointer' }} 
-            onClick={() => navigate('/')}
-          >
-            <div className={homeStyles.logoMark}>
-              <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
-                <text x="16" y="22" fontFamily="Inter,sans-serif" fontSize="16" fontWeight="900"
-                      textAnchor="middle" fill="white">L</text>
-                <defs>
-                  <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6366f1"/><stop offset="1" stopColor="#8b5cf6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <span className={homeStyles.logoText}>Lynq</span>
-          </div>
-
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-        </div>
-      </header>
+      <AppHeader theme={theme} onToggleTheme={onToggleTheme} />
 
       {/* ── Main Content ───────────────────────────── */}
       <main className={styles.main}>

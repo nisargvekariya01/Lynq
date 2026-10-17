@@ -113,7 +113,7 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
         />
         <Route 
           path="/404" 
-          element={<NotFound />} 
+          element={<NotFound theme={theme} onToggleTheme={toggleTheme} />} 
         />
         <Route 
           path="/:shortCode" 
@@ -121,7 +121,7 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
         />
         <Route 
           path="*" 
-          element={<NotFound />} 
+          element={<NotFound theme={theme} onToggleTheme={toggleTheme} />} 
         />
       </Routes>
       <ConnectionStatus />

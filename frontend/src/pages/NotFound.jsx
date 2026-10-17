@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
+import AppHeader from '../components/AppHeader.jsx';
 import styles from './NotFound.module.css';
 
-export default function NotFound() {
+export default function NotFound({ theme, onToggleTheme }) {
   const navigate = useNavigate();
 
   return (
     <div className={styles.container}>
+      <AppHeader theme={theme} onToggleTheme={onToggleTheme} />
       {/* Ambient background glowing orbs */}
       <div className={styles.orb1}></div>
       <div className={styles.orb2}></div>

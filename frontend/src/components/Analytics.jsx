@@ -1,13 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import styles from './Analytics.module.css';
 import { getLiveStreamUrl, downloadAnalyticsCsv } from '../services/api';
+import CountryFlag from './CountryFlag.jsx';
 import {
-  getCountryFlag,
   getCountryName,
   getReferrerMeta,
   getDeviceMeta,
@@ -46,7 +45,6 @@ function StatBox({ label, value, icon, subtext }) {
 }
 
 export default function Analytics({ data }) {
-  const [activeTab, setActiveTab] = useState('timeline'); // 'timeline' | 'geo' | 'tech' | 'sources'
   const [timelineMode, setTimelineMode] = useState('total'); // 'total' | 'unique'
   const [liveClick, setLiveClick] = useState(null);
   const [liveConnected, setLiveConnected] = useState(false);
@@ -66,19 +64,24 @@ export default function Analytics({ data }) {
       };
 
       eventSource.onmessage = (event) => {
+        setLiveConnected(true);
         try {
           const payload = JSON.parse(event.data);
-          if (payload.type === 'click') {
+          if (payload.type === 'connected' || payload.type === 'ping') {
+            setLiveConnected(true);
+          } else if (payload.type === 'click') {
             setLiveClick(payload);
             setLiveClickBump((prev) => prev + 1);
           }
         } catch (e) {
-          // ignore non-json messages (e.g. heartbeat)
+          // ignore non-json messages
         }
       };
 
       eventSource.onerror = () => {
-        setLiveConnected(false);
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setLiveConnected(false);
+        }
       };
     } catch (err) {
       console.warn('SSE connection failed:', err);
@@ -157,7 +160,7 @@ export default function Analytics({ data }) {
             className={styles.fullStatsBtn}
             title="Open dedicated analytics page with 3D spherical globe"
           >
-            <span>🌐 Full Stats & 3D Globe</span>
+            <span>🌐 Full Analytics</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
               <polyline points="15 3 21 3 21 9" />
@@ -193,7 +196,7 @@ export default function Analytics({ data }) {
           <div className={styles.tickerContent}>
             <span className={styles.tickerTag}>⚡ Live Click</span>
             <span>
-              from <strong>{getCountryFlag(liveClick.country)} {liveClick.city && liveClick.city !== 'Unknown' ? `${liveClick.city}, ` : ''}{getCountryName(liveClick.country)}</strong>
+              from <strong><CountryFlag countryCode={liveClick.country} size="sm" /> {liveClick.city && liveClick.city !== 'Unknown' ? `${liveClick.city}, ` : ''}{getCountryName(liveClick.country)}</strong>
               {' '}via <strong>{liveClick.browser}</strong> on {liveClick.device}
             </span>
           </div>
@@ -215,7 +218,7 @@ export default function Analytics({ data }) {
           value={(data.uniqueVisitors ?? 0).toLocaleString()}
         />
         <StatBox
-          icon={topCountry ? getCountryFlag(topCountry.country) : '🌍'}
+          icon={topCountry ? <CountryFlag countryCode={topCountry.country} size="lg" /> : '🌍'}
           label="Top Country"
           value={topCountry ? getCountryName(topCountry.country) : '—'}
           subtext={topCountry ? `${topCountry.count} clicks` : null}
@@ -228,37 +231,8 @@ export default function Analytics({ data }) {
         />
       </div>
 
-      {/* ── Tab Navigation ───────────────────────────────────── */}
-      <div className={styles.tabsContainer}>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'timeline' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('timeline')}
-        >
-          <span>📈</span> Timeline
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'geo' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('geo')}
-        >
-          <span>🌍</span> Geography {data.countries?.length > 0 && `(${data.countries.length})`}
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'tech' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('tech')}
-        >
-          <span>📱</span> Devices & Tech
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'sources' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('sources')}
-        >
-          <span>🔗</span> Traffic Sources {data.referrers?.length > 0 && `(${data.referrers.length})`}
-        </button>
-      </div>
-
-      {/* ── TAB 1: Click Timeline ────────────────────────────── */}
-      {activeTab === 'timeline' && (
-        <div className={styles.viewSection}>
+      {/* ── Click Timeline ────────────────────────────── */}
+      <div className={styles.viewSection}>
           {hasTimeline ? (
             <div>
               <div className={styles.chartHeader}>
@@ -332,235 +306,33 @@ export default function Analytics({ data }) {
               No timeline history yet. Click the link to generate data!
             </div>
           )}
-        </div>
-      )}
 
-      {/* ── TAB 2: Geography & Country Breakdown ─────────────── */}
-      {activeTab === 'geo' && (
-        <div className={styles.viewSection}>
-          <div className={styles.geoGrid}>
-            {/* Top Countries */}
-            <div className={styles.cardPanel}>
-              <div className={styles.cardTitle}>Top Countries</div>
-              {data.countries && data.countries.length > 0 ? (
-                <div className={styles.countryList}>
-                  {data.countries.map((c) => {
-                    const percentage = Math.round((c.count / (totalClicksCount || 1)) * 100);
-                    return (
-                      <div key={c.country} className={styles.geoRow}>
-                        <div className={styles.geoMeta}>
-                          <span className={styles.geoName}>
-                            <span className={styles.flag}>{getCountryFlag(c.country)}</span>
-                            {getCountryName(c.country)}
-                          </span>
-                          <span className={styles.geoCount}>
-                            <span className={styles.geoCountStrong}>{c.count}</span>
-                            <span>({percentage}%)</span>
-                          </span>
-                        </div>
-                        <div className={styles.progressBarTrack}>
-                          <div 
-                            className={styles.progressBarFill} 
-                            style={{ width: `${Math.max(percentage, 5)}%` }} 
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className={styles.emptyNotice}>No country data recorded yet.</div>
-              )}
+          {/* Quick link to 3D Globe & full deep breakdown */}
+          <div style={{
+            marginTop: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            padding: '14px 18px',
+            borderRadius: '12px',
+            background: 'rgba(99, 102, 241, 0.08)',
+            border: '1px solid rgba(99, 102, 241, 0.22)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary, #cbd5e1)' }}>
+              <span style={{ fontSize: '16px' }}>🌐</span>
+              <span>View <strong>3D Spherical Globe</strong>, state/country density, hardware & traffic analytics</span>
             </div>
-
-            {/* Top Cities */}
-            <div className={styles.cardPanel}>
-              <div className={styles.cardTitle}>Top Cities</div>
-              {data.cities && data.cities.length > 0 ? (
-                <div className={styles.cityList}>
-                  {data.cities.map((cityItem, i) => (
-                    <div key={`${cityItem.city}-${i}`} className={styles.geoRow}>
-                      <div className={styles.geoMeta}>
-                        <span className={styles.geoName}>
-                          <span className={styles.flag}>{getCountryFlag(cityItem.country)}</span>
-                          {cityItem.city || 'Unknown City'}
-                        </span>
-                        <span className={styles.geoCount}>
-                          <span className={styles.geoCountStrong}>{cityItem.count} clicks</span>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyNotice}>No city data recorded yet.</div>
-              )}
-            </div>
+            <Link
+              to={`/stats/${data.shortCode}`}
+              className={styles.fullStatsBtn}
+              style={{ padding: '7px 16px', fontSize: '13px', fontWeight: 600 }}
+            >
+              <span>Open Full Analytics →</span>
+            </Link>
           </div>
         </div>
-      )}
-
-      {/* ── TAB 3: Devices & Tech Charts ─────────────────────── */}
-      {activeTab === 'tech' && (
-        <div className={styles.viewSection}>
-          <div className={styles.techGrid}>
-            {/* Device Donut Chart */}
-            <div className={styles.cardPanel}>
-              <div className={styles.cardTitle}>Device Distribution</div>
-              {deviceData.length > 0 ? (
-                <div className={styles.donutWrapper}>
-                  <ResponsiveContainer width="100%" height={170}>
-                    <PieChart>
-                      <Pie
-                        data={deviceData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={68}
-                        paddingAngle={4}
-                        animationDuration={400}
-                      >
-                        {deviceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className={styles.donutLegend}>
-                    {deviceData.map((d) => (
-                      <div key={d.name} className={styles.legendItem}>
-                        <span className={styles.legendDot} style={{ background: d.color }} />
-                        <span>{d.icon} {d.name} ({Math.round((d.value / totalDevicesCount) * 100)}%)</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.emptyNotice}>No device data yet.</div>
-              )}
-            </div>
-
-            {/* Browsers & OS Breakdown */}
-            <div className={styles.cardPanel}>
-              <div className={styles.cardTitle}>Browsers & Operating Systems</div>
-              <div className={styles.breakdownStack}>
-                {/* Browsers */}
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Browsers
-                  </div>
-                  {data.browsers && data.browsers.length > 0 ? (
-                    data.browsers.slice(0, 4).map((b, idx) => {
-                      const share = Math.round((b.count / (totalClicksCount || 1)) * 100);
-                      return (
-                        <div key={b.browser} className={styles.pillRow}>
-                          <div className={styles.pillMeta}>
-                            <span>{b.browser}</span>
-                            <span><strong>{b.count}</strong> ({share}%)</span>
-                          </div>
-                          <div className={styles.progressBarTrack}>
-                            <div
-                              className={styles.progressBarFill}
-                              style={{
-                                width: `${Math.max(share, 5)}%`,
-                                background: CHART_COLORS[idx % CHART_COLORS.length]
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className={styles.emptyNotice}>No browser data yet.</div>
-                  )}
-                </div>
-
-                {/* Operating Systems */}
-                <div style={{ marginTop: '10px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Operating Systems
-                  </div>
-                  {data.os && data.os.length > 0 ? (
-                    data.os.slice(0, 3).map((o, idx) => {
-                      const share = Math.round((o.count / (totalClicksCount || 1)) * 100);
-                      return (
-                        <div key={o.os} className={styles.pillRow}>
-                          <div className={styles.pillMeta}>
-                            <span>{o.os}</span>
-                            <span><strong>{o.count}</strong> ({share}%)</span>
-                          </div>
-                          <div className={styles.progressBarTrack}>
-                            <div
-                              className={styles.progressBarFill}
-                              style={{
-                                width: `${Math.max(share, 5)}%`,
-                                background: CHART_COLORS[(idx + 2) % CHART_COLORS.length]
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 4: Traffic Sources & Referrers ────────────────── */}
-      {activeTab === 'sources' && (
-        <div className={styles.viewSection}>
-          <div className={styles.cardPanel}>
-            <div className={styles.cardTitle}>Referrers & Acquisition Channels</div>
-            {data.referrers && data.referrers.length > 0 ? (
-              <div className={styles.sourcesTable}>
-                {data.referrers.map((r) => {
-                  const meta = getReferrerMeta(r.referrer);
-                  const share = Math.round((r.count / (totalClicksCount || 1)) * 100);
-                  return (
-                    <div key={r.referrer} className={styles.sourceRow}>
-                      <div className={styles.sourceLeft}>
-                        <span className={styles.sourceIcon}>{meta.icon}</span>
-                        <div>
-                          <div className={styles.sourceDomain}>{meta.label}</div>
-                          <span 
-                            className={styles.sourceCategory} 
-                            style={{ 
-                              background: `${meta.badgeColor}20`, 
-                              color: meta.badgeColor,
-                              border: `1px solid ${meta.badgeColor}40`
-                            }}
-                          >
-                            {meta.category}
-                          </span>
-                        </div>
-                      </div>
-                      <div className={styles.sourceRight}>
-                        <span className={styles.sourceShare}>{share}%</span>
-                        <span className={styles.sourceClicks}>{r.count} clicks</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className={styles.emptyNotice}>No referrer data recorded yet.</div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

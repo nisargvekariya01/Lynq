@@ -233,13 +233,15 @@ export const handleCheckAlias = async (req, res, next) => {
 export const handleLiveStream = (req, res) => {
   const { shortCode } = req.params;
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
   res.flushHeaders?.();
 
-  // Initial connection handshake
+  // Immediate connection confirmation handshake
   res.write(
     `data: ${JSON.stringify({ type: "connected", shortCode, ts: Date.now() })}\n\n`,
   );
@@ -251,8 +253,8 @@ export const handleLiveStream = (req, res) => {
   eventBus.on(`click:${shortCode}`, clickListener);
 
   const heartbeat = setInterval(() => {
-    res.write(": heartbeat\n\n");
-  }, 15000);
+    res.write(`data: ${JSON.stringify({ type: "ping", ts: Date.now() })}\n\n`);
+  }, 10000);
 
   req.on("close", () => {
     clearInterval(heartbeat);
