@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { LandingFooter } from '../components/LandingSections.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 import AppHeader from '../components/AppHeader.jsx';
 import { getCountryName, getReferrerMeta, getDeviceMeta, CHART_COLORS } from '../utils/telemetry.js';
 import { getRegionLabel, getMarkerColorByCount } from '../utils/geoCoordinates.js';
@@ -193,7 +193,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
             <div className={styles.skeletonBar} style={{ height: '520px', width: '100%' }} />
           </div>
         </div>
-        <LandingFooter />
+        <AppFooter />
       </div>
     );
   }
@@ -218,7 +218,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
             </button>
           </div>
         </div>
-        <LandingFooter />
+        <AppFooter />
       </div>
     );
   }
@@ -758,7 +758,7 @@ export default function Stats({ theme, onToggleTheme, addToast }) {
           </div>
         </div>
       </div>
-      <LandingFooter />
+      <AppFooter />
     </div>
   );
 }

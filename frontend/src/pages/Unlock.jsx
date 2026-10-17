@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { verifyPassword } from '../services/api.js';
 import AppHeader from '../components/AppHeader.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 import styles from './Unlock.module.css';
 
 export default function Unlock({ theme, onToggleTheme, addToast }) {
@@ -58,6 +59,7 @@ export default function Unlock({ theme, onToggleTheme, addToast }) {
           </div>
         </form>
       </main>
+      <AppFooter />
     </div>
   );
 }

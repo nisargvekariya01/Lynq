@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SignInButton, UserButton, UserProfile } from '@clerk/clerk-react';
+import { SignInButton, UserProfile, SignOutButton } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { dark } from '@clerk/themes';
 import { shortenUrl as apiShorten, getUrlInfo, editUrl, deleteUrl, getUserLinks } from '../services/api.js';
@@ -12,17 +12,17 @@ import ResultCard from '../components/ResultCard.jsx';
 import QRCodeCard from '../components/QRCodeCard.jsx';
 import Analytics from '../components/Analytics.jsx';
 import RecentUrls from '../components/RecentUrls.jsx';
-import ThemeToggle from '../components/ThemeToggle.jsx';
 import BulkUpload from '../components/BulkUpload.jsx';
-import LandingSections, { LandingFooter } from '../components/LandingSections.jsx';
+import LandingSections from '../components/LandingSections.jsx';
 import AppHeader from '../components/AppHeader.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 
 import styles from './Home.module.css';
 
 const MAX_RECENT_STORAGE = 1000;
 
 export default function Home({ theme, onToggleTheme, addToast }) {
-  const { isSignedIn, hasClerk } = useLynqAuth();
+  const { isSignedIn, hasClerk, user } = useLynqAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -143,19 +143,19 @@ export default function Home({ theme, onToggleTheme, addToast }) {
   }, [isSignedIn, addToast, setRecentUrls]);
 
   const handleSelectRecent = useCallback(async (item) => {
-    // Set immediate cached state
+    // Set immediate cached state (isExisting: false so warning badge does not show on simple click)
     setResult({
       shortUrl: item.shortUrl,
       shortCode: item.shortCode,
       originalUrl: item.originalUrl,
       clicks: 0,
-      isExisting: true,
+      isExisting: false,
     });
 
     // Fetch live stats
     try {
       const data = await getUrlInfo(item.shortCode);
-      setResult((prev) => ({ ...prev, ...data, isExisting: true }));
+      setResult((prev) => ({ ...prev, ...data, isExisting: false }));
     } catch (err) {
       console.error('Failed to fetch live stats', err);
     }
@@ -512,6 +512,40 @@ export default function Home({ theme, onToggleTheme, addToast }) {
                       </p>
                     </div>
 
+                    {/* ── User Profile & Sign Out Bar (Moved from header) ── */}
+                    {isSignedIn && user && (
+                      <div className={styles.userSettingProfileBar}>
+                        <div className={styles.userSettingProfileLeft}>
+                          {user.imageUrl ? (
+                            <img src={user.imageUrl} alt={user.fullName || 'User'} className={styles.userSettingAvatarImg} />
+                          ) : (
+                            <div className={styles.userSettingAvatarLetter}>
+                              {(user.firstName || user.username || 'U')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div className={styles.userSettingMeta}>
+                            <div className={styles.userSettingName}>
+                              {user.fullName || user.firstName || 'User'}
+                            </div>
+                            <div className={styles.userSettingUsername}>
+                              {user.username || user.primaryEmailAddress?.emailAddress || ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <SignOutButton redirectUrl="/">
+                          <button type="button" className={styles.userSettingSignOutBtn} title="Sign out of your Lynq account">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                              <polyline points="16 17 21 12 16 7" />
+                              <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            <span>Sign out</span>
+                          </button>
+                        </SignOutButton>
+                      </div>
+                    )}
+
                     <div className={styles.userProfileWrapper}>
                       {hasClerk ? (
                         <UserProfile
@@ -569,23 +603,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
       </main>
 
       {/* ── Footer ─────────────────────────────────── */}
-      {!isSignedIn ? (
-        <LandingFooter />
-      ) : (
-        <footer className={styles.footer}>
-          <div className={styles.footerInner}>
-            <span>Built with ⚡ by Lynq</span>
-            <span className={styles.dot}>·</span>
-            <span>Open Source URL Shortener</span>
-            <span className={styles.dot}>·</span>
-            <span>Redis-powered</span>
-            <span className={styles.dot}>·</span>
-            <span>Blazing fast</span>
-            <span className={styles.dot}>·</span>
-            <span>No Ads. No Tracking.</span>
-          </div>
-        </footer>
-      )}
+      <AppFooter />
     </div>
   );
 }

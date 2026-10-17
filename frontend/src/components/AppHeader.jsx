@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SignInButton, UserButton } from '@clerk/clerk-react';
-import { dark } from '@clerk/themes';
+import { SignInButton } from '@clerk/clerk-react';
 import { useLynqAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import styles from './AppHeader.module.css';
@@ -46,28 +45,19 @@ export default function AppHeader({ theme, onToggleTheme }) {
           <span className={styles.logoText}>Lynq</span>
         </div>
 
-        {/* Right Actions: Clerk Auth, Search Shortcut, Theme Toggle */}
+        {/* Right Actions: Clerk Sign-In (guest only), Search Shortcut, Theme Toggle */}
         <div className={styles.headerRight}>
-          {hasClerk && (
-            isSignedIn ? (
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  baseTheme: theme === 'dark' ? dark : undefined,
-                }}
-              />
-            ) : (
-              <SignInButton mode="modal" oauthFlow="popup">
-                <button type="button" className={styles.signInBtn}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <polyline points="10 17 15 12 10 7" />
-                    <line x1="15" y1="12" x2="3" y2="12" />
-                  </svg>
-                  <span>Sign In</span>
-                </button>
-              </SignInButton>
-            )
+          {hasClerk && !isSignedIn && (
+            <SignInButton mode="modal" oauthFlow="popup">
+              <button type="button" className={styles.signInBtn}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                <span>Sign In</span>
+              </button>
+            </SignInButton>
           )}
 
           <button

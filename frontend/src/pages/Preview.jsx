@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getUrlInfo, checkStatus, getAiSummary } from '../services/api.js';
 import AppHeader from '../components/AppHeader.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 import styles from './Preview.module.css';
 
 export default function Preview({ theme, onToggleTheme }) {
@@ -183,6 +184,7 @@ export default function Preview({ theme, onToggleTheme }) {
           </div>
         )}
       </main>
+      <AppFooter />
     </div>
   );
 }

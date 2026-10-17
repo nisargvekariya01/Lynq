@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 import styles from './NotFound.module.css';
 
 export default function NotFound({ theme, onToggleTheme }) {
@@ -27,6 +28,7 @@ export default function NotFound({ theme, onToggleTheme }) {
           Back to Home
         </button>
       </main>
+      <AppFooter />
     </div>
   );
 }
