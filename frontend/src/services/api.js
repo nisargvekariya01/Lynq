@@ -274,4 +274,13 @@ export const getUserAnalyticsSummary = async () => {
   return data; // { success, summary: { totalClicks, totalLinks, activeLinks, topLinks } }
 };
 
+/**
+ * Fetch live actual platform statistics for the public landing page.
+ * @returns {Promise<{ success: boolean, stats: { totalLinks: number, totalRedirects: number, countriesCount: number, latencyMs: number, uptime: string } }>}
+ */
+export const getPlatformStats = async () => {
+  const { data } = await api.get("/platform-stats");
+  return data;
+};
+
 export default api;

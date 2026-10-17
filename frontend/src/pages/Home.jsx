@@ -502,69 +502,73 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           /* ── Landing Page Two-Column Hero ───────────── */
           <div className={styles.heroGrid}>
             <div className={styles.heroLeft}>
-              <div className={styles.heroLeftBadge}>
-                <span className={styles.badgeDot} />
-                Next-Gen Link Platform · Instant · Free
+              <div className={styles.heroLeftTop}>
+                <div className={styles.heroLeftBadge}>
+                  <span className={styles.badgeDot} />
+                  Next-Gen Link Platform · Instant · Free
+                </div>
+
+                <h1 className={styles.heroTitle}>
+                  URL shortener
+                  <br />
+                  <span className={styles.heroTitleGradient}>with analytics</span>
+                </h1>
+
+                <p className={styles.heroDesc}>
+                  Free custom link shortener with real-time telemetry, geo-routing, and smart link targeting to optimize every redirect.
+                </p>
               </div>
 
-              <h1 className={styles.heroTitle}>
-                URL shortener
-                <br />
-                <span className={styles.heroTitleGradient}>with analytics</span>
-              </h1>
-
-              <p className={styles.heroDesc}>
-                Free custom link shortener with real-time telemetry, geo-routing, and smart link targeting to optimize every redirect.
-              </p>
-
-              <div className={styles.heroCtaRow}>
-                {hasClerk ? (
-                  <SignInButton mode="modal" oauthFlow="popup">
-                    <button type="button" className={styles.heroPrimaryBtn}>
-                      <span>Get Started Free</span>
+              <div className={styles.heroLeftBottom}>
+                <div className={styles.heroCtaRow}>
+                  {hasClerk ? (
+                    <SignInButton mode="modal" oauthFlow="popup">
+                      <button type="button" className={styles.heroPrimaryBtn}>
+                        <span>Get Started Free</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </SignInButton>
+                  ) : (
+                    <button type="button" className={styles.heroPrimaryBtn} onClick={scrollToInput}>
+                      <span>Shorten Link Now</span>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
                     </button>
-                  </SignInButton>
-                ) : (
-                  <button type="button" className={styles.heroPrimaryBtn} onClick={scrollToInput}>
-                    <span>Shorten Link Now</span>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
+                  )}
+
+                  <button 
+                    type="button" 
+                    className={styles.heroSecondaryBtn}
+                    onClick={() => document.getElementById('showcase')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
                     </svg>
+                    <span>See Live Demo</span>
                   </button>
-                )}
-
-                <button 
-                  type="button" 
-                  className={styles.heroSecondaryBtn}
-                  onClick={() => document.getElementById('showcase')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
-                  </svg>
-                  <span>See Live Demo</span>
-                </button>
-              </div>
-
-              <div className={styles.heroTrustBullets}>
-                <div className={styles.heroTrustItem}>
-                  <span className={styles.heroCheckIcon}>✓</span> Free forever plan
                 </div>
-                <div className={styles.heroTrustItem}>
-                  <span className={styles.heroCheckIcon}>✓</span> No credit card required
-                </div>
-                <div className={styles.heroTrustItem}>
-                  <span className={styles.heroCheckIcon}>✓</span> &lt;15ms redirect latency
+
+                <div className={styles.heroTrustBullets}>
+                  <div className={styles.heroTrustItem}>
+                    <span className={styles.heroCheckIcon}>✓</span> Free forever plan
+                  </div>
+                  <div className={styles.heroTrustItem}>
+                    <span className={styles.heroCheckIcon}>✓</span> No credit card required
+                  </div>
+                  <div className={styles.heroTrustItem}>
+                    <span className={styles.heroCheckIcon}>✓</span> &lt;15ms redirect latency
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className={styles.heroRight} id="shorten-input-container">
               <div className={styles.heroRightCard}>
-                <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+                <UrlInput onShorten={handleShorten} isLoading={isLoading} isSignedIn={isSignedIn} isHero={true} />
               </div>
             </div>
           </div>
@@ -645,7 +649,7 @@ export default function Home({ theme, onToggleTheme, addToast }) {
 
                   {/* ── Logged In Link Shortening Form ───── */}
                   <div className={styles.inputSection} id="shorten-input-container">
-                    <UrlInput onShorten={handleShorten} isLoading={isLoading} />
+                    <UrlInput onShorten={handleShorten} isLoading={isLoading} isSignedIn={isSignedIn} />
                   </div>
 
                   {/* ── Bulk CSV Upload ─────────────────── */}
@@ -750,13 +754,9 @@ export default function Home({ theme, onToggleTheme, addToast }) {
           </>
         )}
 
-        {/* ── Guest Only: Bulk Upload, Links, Results & Landing ── */}
+        {/* ── Guest Only: Recent Links, Results & Landing ── */}
         {!isSignedIn && (
           <>
-            <div className={styles.inputSection}>
-              <BulkUpload onAdded={handleBulkAdded} />
-            </div>
-
             {allLinks.length > 0 && (
               <div className={styles.recentSection} id="recent-links-container">
                 <RecentUrls

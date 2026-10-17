@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
-import { AuthProvider } from './context/AuthContext.jsx';
+import { AuthProvider, useLynqAuth } from './context/AuthContext.jsx';
 import { downloadAnalyticsCsv } from './services/api.js';
 import Home from './pages/Home.jsx';
 import Stats from './pages/Stats.jsx';
@@ -16,6 +16,7 @@ import CommandPalette from './components/CommandPalette.jsx';
 
 function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
   const navigate = useNavigate();
+  const { isSignedIn } = useLynqAuth();
   const [isCmdOpen, setIsCmdOpen] = useState(false);
   const [recentLinks, setRecentLinks] = useState([]);
   const [activeCode, setActiveCode] = useState(null);
@@ -37,6 +38,7 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
   // Global keydown listener for Cmd+K / Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (!isSignedIn) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         refreshRecentLinks();
@@ -45,6 +47,7 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
     };
 
     const handleToggleCmd = () => {
+      if (!isSignedIn) return;
       refreshRecentLinks();
       setIsCmdOpen((prev) => !prev);
     };
@@ -62,7 +65,7 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
       window.removeEventListener('lynq-toggle-cmd', handleToggleCmd);
       window.removeEventListener('lynq-active-code', handleActiveCode);
     };
-  }, [refreshRecentLinks]);
+  }, [isSignedIn, refreshRecentLinks]);
 
   // Handlers for Command Palette actions
   const handleSelectLink = (link) => {
@@ -126,19 +129,21 @@ function AppContent({ theme, toggleTheme, toasts, addToast, removeToast }) {
       </Routes>
       <ConnectionStatus />
       <Toast toasts={toasts} onRemove={removeToast} />
-      <CommandPalette
-        isOpen={isCmdOpen}
-        onClose={() => setIsCmdOpen(false)}
-        recentLinks={recentLinks}
-        onSelectLink={handleSelectLink}
-        onToggleTheme={toggleTheme}
-        currentTheme={theme}
-        onFocusNewLink={handleFocusNewLink}
-        onOpenPortfolio={handleOpenPortfolio}
-        currentActiveCode={activeCode}
-        onExportCsv={downloadAnalyticsCsv}
-        addToast={addToast}
-      />
+      {isSignedIn && (
+        <CommandPalette
+          isOpen={isCmdOpen}
+          onClose={() => setIsCmdOpen(false)}
+          recentLinks={recentLinks}
+          onSelectLink={handleSelectLink}
+          onToggleTheme={toggleTheme}
+          currentTheme={theme}
+          onFocusNewLink={handleFocusNewLink}
+          onOpenPortfolio={handleOpenPortfolio}
+          currentActiveCode={activeCode}
+          onExportCsv={downloadAnalyticsCsv}
+          addToast={addToast}
+        />
+      )}
     </div>
   );
 }

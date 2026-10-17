@@ -80,9 +80,9 @@
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   gap: 48px;
-  align-items: center;
+  align-items: start;
   width: 100%;
-  padding: 20px 0 10px;
+  padding: 24px 0 16px;
 }
 
 .heroLeft {
@@ -90,8 +90,27 @@
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  gap: 20px;
+  justify-content: space-between;
+  height: 412px;
+  min-height: 412px;
+  box-sizing: border-box;
   animation: fadeInUp 0.6s var(--ease-out) forwards;
+}
+
+.heroLeftTop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  width: 100%;
+}
+
+.heroLeftBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  width: 100%;
 }
 
 .heroLeftBadge {
@@ -217,9 +236,11 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 26px;
   box-shadow: var(--shadow-card);
   position: relative;
+  min-height: 412px;
+  box-sizing: border-box;
 }
 
 .heroRightCard::before {
@@ -242,8 +263,20 @@
     gap: 32px;
   }
   .heroLeft {
+    height: auto;
+    min-height: auto;
+    gap: 28px;
     align-items: center;
     text-align: center;
+  }
+  .heroLeftTop {
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+  .heroLeftBottom {
+    align-items: center;
+    gap: 16px;
   }
   .heroDesc {
     max-width: 560px;

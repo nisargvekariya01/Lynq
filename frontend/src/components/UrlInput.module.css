@@ -490,3 +490,74 @@
   border-color: rgba(99, 102, 241, 0.4);
 }
 
+/* ── Hero Landing Variant: Seamless Single Border & Balanced Height ── */
+.heroFormCard {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  animation: none;
+  gap: 14px;
+}
+
+.heroFormCard .fieldGroup {
+  gap: 6px;
+}
+
+.heroFormCard .label {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.heroFormCard .inputWrapper {
+  padding: 0 14px;
+}
+
+.heroFormCard .input {
+  font-size: 14.5px;
+  padding: 11px 0;
+}
+
+.heroFormCard .icon {
+  font-size: 15px;
+  margin-right: 9px;
+}
+
+.heroFormCard .advancedToggle {
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: -2px;
+  margin-bottom: 0;
+}
+
+.heroFormCard .advancedSection {
+  gap: 14px;
+}
+
+.heroFormCard .advancedSectionOpen {
+  padding-top: 14px;
+}
+
+.heroFormCard .gridRow {
+  gap: 14px;
+}
+
+.heroFormCard .submitBtn {
+  padding: 12.5px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.heroFormCard .footerHint {
+  margin-top: 6px;
+}
+
+.heroFormCard .shortcut {
+  font-size: 12px;
+}
+
+
+

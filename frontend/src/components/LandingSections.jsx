@@ -1,7 +1,41 @@
+import { useState, useEffect } from 'react';
 import { SignInButton } from '@clerk/clerk-react';
+import { getPlatformStats } from '../services/api.js';
 import styles from './LandingSections.module.css';
 
 export default function LandingSections({ hasClerk, onScrollToInput }) {
+  const [platformStats, setPlatformStats] = useState({
+    totalLinks: 26,
+    totalRedirects: 146,
+    countriesCount: 3,
+    latencyMs: 12,
+    uptime: '99.99%',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    getPlatformStats()
+      .then((res) => {
+        if (isMounted && res && res.stats) {
+          setPlatformStats(res.stats);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load live platform stats:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const formatStat = (val, hasPlus = true) => {
+    if (val === null || val === undefined) return '0';
+    const num = Number(val);
+    if (isNaN(num)) return val;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M+`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K+`;
+    return hasPlus && num > 0 ? `${num}+` : `${num}`;
+  };
   return (
     <div className={styles.wrapper}>
       {/* ── 1. Trust Badges Bar ─────────────────────────────── */}
@@ -35,15 +69,6 @@ export default function LandingSections({ hasClerk, onScrollToInput }) {
           </div>
         </div>
       </section>
-
-      {/* ── 2. Quick Feature Anchor Navigation ─────────────── */}
-      <nav className={styles.anchorsNav}>
-        <a href="#features" className={styles.anchorPill}>📈 Deep Telemetry</a>
-        <a href="#features" className={styles.anchorPill}>🛡️ AI Phishing Shield</a>
-        <a href="#features" className={styles.anchorPill}>📱 QR Code Studio</a>
-        <a href="#features" className={styles.anchorPill}>🤖 AI TL;DR Previews</a>
-        <a href="#showcase" className={styles.anchorPill}>⚡ Live Showcase</a>
-      </nav>
 
       {/* ── 3. Bento Features Grid ("Everything you need") ──── */}
       <section id="features" className={styles.section}>
@@ -237,44 +262,27 @@ export default function LandingSections({ hasClerk, onScrollToInput }) {
         </div>
       </section>
 
-      {/* ── 5. Trusted at Scale (Metric Counters) ────────────── */}
+      {/* ── 5. Trusted at Scale (Actual Live Platform Metrics) ────────────── */}
       <section className={styles.statsBanner}>
         <div className={styles.statBannerItem}>
-          <div className={styles.statBannerVal}>4.5M+</div>
+          <div className={styles.statBannerVal}>{formatStat(platformStats.totalLinks)}</div>
           <div className={styles.statBannerLabel}>Links Shortened</div>
         </div>
         <div className={styles.statBannerItem}>
-          <div className={styles.statBannerVal}>100M+</div>
-          <div className={styles.statBannerLabel}>Monthly Redirects</div>
+          <div className={styles.statBannerVal}>{formatStat(platformStats.totalRedirects)}</div>
+          <div className={styles.statBannerLabel}>Total Redirects</div>
         </div>
         <div className={styles.statBannerItem}>
-          <div className={styles.statBannerVal}>99.99%</div>
+          <div className={styles.statBannerVal}>{platformStats.uptime || '99.99%'}</div>
           <div className={styles.statBannerLabel}>Uptime SLA</div>
         </div>
         <div className={styles.statBannerItem}>
-          <div className={styles.statBannerVal}>&lt;15ms</div>
+          <div className={styles.statBannerVal}>&lt;{Math.max(15, platformStats.latencyMs || 12)}ms</div>
           <div className={styles.statBannerLabel}>Global Latency</div>
         </div>
       </section>
 
-      {/* ── 6. Customer Testimonial ─────────────────────────── */}
-      <section className={styles.section}>
-        <div className={styles.testimonialCard}>
-          <div className={styles.stars}>★★★★★</div>
-          <blockquote className={styles.quote}>
-            &ldquo;Lynq completely replaced our previous enterprise link shortening tool. The real-time SSE stream, instant CSV telemetry exports, and built-in AI phishing detection saved us thousands of dollars a year.&rdquo;
-          </blockquote>
-          <div className={styles.authorRow}>
-            <div className={styles.avatar}>NV</div>
-            <div>
-              <div className={styles.authorName}>Nisarg Vekariya</div>
-              <div className={styles.authorRole}>Head of Engineering & Platform Architecture</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 7. Final Call to Action ────────────────────────── */}
+      {/* ── 6. Final Call to Action ────────────────────────── */}
       <section className={styles.ctaBanner}>
         <div className={styles.ctaBannerInner}>
           <h2 className={styles.ctaTitle}>Ready to supercharge your links?</h2>

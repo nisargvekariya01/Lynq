@@ -60,21 +60,23 @@ export default function AppHeader({ theme, onToggleTheme }) {
             </SignInButton>
           )}
 
-          <button
-            type="button"
-            className={styles.cmdPaletteBtn}
-            onClick={handleToggleCmd}
-            title="Search links or commands (Cmd+K / Ctrl+K)"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <span className={styles.cmdPaletteBtnText}>Search</span>
-            <kbd className={styles.cmdKbd}>
-              {typeof navigator !== 'undefined' && navigator.platform?.toUpperCase().includes('MAC') ? '⌘K' : 'Ctrl+K'}
-            </kbd>
-          </button>
+          {isSignedIn && (
+            <button
+              type="button"
+              className={styles.cmdPaletteBtn}
+              onClick={handleToggleCmd}
+              title="Search links or commands (Cmd+K / Ctrl+K)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span className={styles.cmdPaletteBtnText}>Search</span>
+              <kbd className={styles.cmdKbd}>
+                {typeof navigator !== 'undefined' && navigator.platform?.toUpperCase().includes('MAC') ? '⌘K' : 'Ctrl+K'}
+              </kbd>
+            </button>
+          )}
 
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </div>

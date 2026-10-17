@@ -5,7 +5,7 @@ import styles from './UrlInput.module.css';
 /**
  * UrlInput — A form-like UI for entering long URL, custom alias, password, expiry, and max clicks.
  */
-export default function UrlInput({ onShorten, isLoading }) {
+export default function UrlInput({ onShorten, isLoading, isSignedIn = false, isHero = false }) {
   const [url, setUrl] = useState('');
   const [alias, setAlias] = useState('');
   const [password, setPassword] = useState('');
@@ -209,7 +209,7 @@ export default function UrlInput({ onShorten, isLoading }) {
   };
 
   return (
-    <form className={styles.formCard} onSubmit={handleSubmit} noValidate>
+    <form className={`${styles.formCard} ${isHero ? styles.heroFormCard : ''}`} onSubmit={handleSubmit} noValidate>
       
       {/* 1. Destination URL */}
       <div className={styles.fieldGroup}>
@@ -217,7 +217,7 @@ export default function UrlInput({ onShorten, isLoading }) {
           <label htmlFor="url-input" className={styles.label}>
             Destination URL <span className={styles.req}>*</span>
           </label>
-          {url.trim() && !errors.url && (
+          {isSignedIn && url.trim() && !errors.url && (
             <button
               type="button"
               className={styles.aiBtn}
@@ -384,21 +384,23 @@ export default function UrlInput({ onShorten, isLoading }) {
             <div className={styles.takenContainer}>
               <div className={styles.takenHeader}>
                 <p className={styles.aliasTaken}>❌ Already taken — try a different alias.</p>
-                <button
-                  type="button"
-                  className={styles.suggestAltBtn}
-                  onClick={handleSuggestAlternatives}
-                  disabled={isSuggestingAliases || isLoading}
-                >
-                  {isSuggestingAliases ? (
-                    <>
-                      <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                      <span>Thinking…</span>
-                    </>
-                  ) : (
-                    '✨ Suggest available alternatives'
-                  )}
-                </button>
+                {isSignedIn && (
+                  <button
+                    type="button"
+                    className={styles.suggestAltBtn}
+                    onClick={handleSuggestAlternatives}
+                    disabled={isSuggestingAliases || isLoading}
+                  >
+                    {isSuggestingAliases ? (
+                      <>
+                        <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                        <span>Thinking…</span>
+                      </>
+                    ) : (
+                      '✨ Suggest available alternatives'
+                    )}
+                  </button>
+                )}
               </div>
 
               {aliasSuggestions.length > 0 && (

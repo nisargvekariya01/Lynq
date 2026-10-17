@@ -10,6 +10,7 @@ import {
   handleResolveAndTrack,
   handleLiveStream,
   handleExportCsv,
+  handleGetPlatformStats,
 } from "../controllers/urlController.js";
 import { handleCheckStatus } from "../controllers/statusController.js";
 import { handleBulkShorten } from "../controllers/bulkController.js";
@@ -45,6 +46,9 @@ router.get("/check-alias/:alias", handleCheckAlias);
 
 // GET /api/status/:shortCode
 router.get("/status/:shortCode", handleCheckStatus);
+
+// GET /api/platform-stats (Real-time live platform metrics)
+router.get("/platform-stats", handleGetPlatformStats);
 
 // POST /api/verify/:shortCode
 router.post("/verify/:shortCode", handleVerifyPassword);
